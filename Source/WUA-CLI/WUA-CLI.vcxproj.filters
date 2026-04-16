@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="..\3rdParty\cJSON\cJSON.c">
+      <Filter>3rdParty\cJSON</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\Window\Capture.cpp">
+      <Filter>Tools\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\Gdip.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\File\Recycle.cpp">
+      <Filter>Tools\File</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\Window\List.cpp">
+      <Filter>Tools\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\Objects.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\Input\Text.cpp">
+      <Filter>Tools\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\Window.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Operation.cpp">
+      <Filter>Tools\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\Input\Mouse.cpp">
+      <Filter>Tools\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\Json.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\String.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="..\3rdParty\cJSON\cJSON.h">
+      <Filter>3rdParty\cJSON</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\Utils.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="3rdParty">
+      <UniqueIdentifier>{5e71cb37-7b28-4106-8c82-64324b90860b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdParty\cJSON">
+      <UniqueIdentifier>{a81b62aa-7986-4146-9e75-ce60068a2f21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tools">
+      <UniqueIdentifier>{a557ed21-0d10-48de-a8f3-b58701fd6e2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tools\Window">
+      <UniqueIdentifier>{d0bf220c-e71e-4bd6-9765-92bd74c8c065}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{135f89ce-8898-46be-9842-a9a0d3b39580}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tools\File">
+      <UniqueIdentifier>{79a98669-ccbd-4a4b-8a0e-e0e3203c6c1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tools\Input">
+      <UniqueIdentifier>{3cac2e7d-09a1-428c-8483-42fd02a9fb7a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="WUA-CLI.rc" />
+  </ItemGroup>
+</Project>

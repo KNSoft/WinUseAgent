@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="WUA-CLI/WUA-CLI.vcxproj" Id="7e7997d5-8e23-45a4-b1b2-25675e00100f" />
+</Solution>

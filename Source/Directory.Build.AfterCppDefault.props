@@ -1,0 +1,17 @@
+﻿<Project>
+    <!-- [Overwrite defaults] -->
+    <PropertyGroup>
+        <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+        <UseKnsoftDefaultOutputDirs Condition="'$(UseKnsoftDefaultOutputDirs)' == ''">true</UseKnsoftDefaultOutputDirs>
+        <KnsoftOutputRoot Condition="'$(KnsoftOutputRoot)' == '' and '$(SolutionDir)' != ''">$(SolutionDir)</KnsoftOutputRoot>
+        <KnsoftOutputRoot Condition="'$(KnsoftOutputRoot)' == ''">$(MSBuildProjectDirectory)\</KnsoftOutputRoot>
+        <KnsoftDefaultOutDir Condition="'$(KnsoftDefaultOutDir)' == ''">$(KnsoftOutputRoot)OutDir\$(KnsoftArch)\$(Configuration)\</KnsoftDefaultOutDir>
+        <KnsoftDefaultIntDir Condition="'$(KnsoftDefaultIntDir)' == ''">$(MSBuildProjectDirectory)\IntDir\$(KnsoftArch)\$(Configuration)\</KnsoftDefaultIntDir>
+    </PropertyGroup>
+    <PropertyGroup Label="Configuration">
+        <CharacterSet>Unicode</CharacterSet>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'" Label="Configuration">
+        <UseDebugLibraries>true</UseDebugLibraries>
+    </PropertyGroup>
+</Project>
