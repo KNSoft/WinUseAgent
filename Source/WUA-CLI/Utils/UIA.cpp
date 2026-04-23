@@ -62,15 +62,59 @@ Util_UIA_GetTextByProperty(
     return Ret;
 }
 
+static
+ULONG
+Util_UIA_GetTextFromTextRange(
+    _In_ IUIAutomationTextRange * TextRange,
+    _Out_writes_(BufferCch) PSTR Buffer,
+    _In_ ULONG BufferCch)
+{
+    BSTR Text;
+    ULONG BytesWritten;
+
+    BytesWritten = 0;
+    if (SUCCEEDED(TextRange->GetText(BufferCch, &Text)) && Text != NULL)
+    {
+        RtlUnicodeToUTF8N(Buffer, BufferCch - 1, &BytesWritten, Text, SysStringLen(Text) * sizeof(WCHAR));
+        SysFreeString(Text);
+        Buffer[BytesWritten] = ANSI_NULL;
+    }
+    return BytesWritten;
+}
+
+static
+ULONG
+Util_UIA_GetTextFromDocumentPattern(
+    _In_ IUIAutomationElement * Element,
+    _In_ PATTERNID PatternId,
+    _Out_writes_(BufferCch) PSTR Buffer,
+    _In_ ULONG BufferCch)
+{
+    IUIAutomationTextPattern* TextPattern;
+    IUIAutomationTextRange* DocumentRange;
+    ULONG BytesWritten;
+
+    BytesWritten = 0;
+    if (SUCCEEDED(Element->GetCurrentPatternAs(PatternId, IID_PPV_ARGS(&TextPattern))))
+    {
+        if (SUCCEEDED(TextPattern->get_DocumentRange(&DocumentRange)))
+        {
+            BytesWritten = Util_UIA_GetTextFromTextRange(DocumentRange, Buffer, BufferCch);
+            DocumentRange->Release();
+        }
+        TextPattern->Release();
+    }
+    return BytesWritten;
+}
+
 ULONG
 Util_UIA_GetText(
     _In_ IUIAutomationElement * Element,
     _Out_writes_(BufferCch) PSTR Buffer,
     _In_ ULONG BufferCch)
 {
-    IUIAutomationTextPattern* TextPattern;
-    IUIAutomationTextRange* DocumentRange;
-    BSTR Text;
+    IUIAutomationTextChildPattern* TextChildPattern;
+    IUIAutomationTextRange* TextRange;
     ULONG BytesWritten;
 
     if (Util_UIA_GetTextByProperty(Element, UIA_ValueValuePropertyId, Buffer, BufferCch, &BytesWritten))
@@ -83,26 +127,38 @@ Util_UIA_GetText(
     }
 
     /* Try UIA_TextPatternId */
-    BytesWritten = 0;
-    if (SUCCEEDED(Element->GetCurrentPatternAs(UIA_TextPatternId, IID_PPV_ARGS(&TextPattern))))
+    BytesWritten = Util_UIA_GetTextFromDocumentPattern(Element, UIA_TextPatternId, Buffer, BufferCch);
+    if (BytesWritten > 0)
     {
-        if (SUCCEEDED(TextPattern->get_DocumentRange(&DocumentRange)))
-        {
-            if (SUCCEEDED(DocumentRange->GetText(BufferCch, &Text)))
-            {
-                if (Text != NULL)
-                {
-                    RtlUnicodeToUTF8N(Buffer, BufferCch - 1, &BytesWritten, Text, SysStringLen(Text) * sizeof(WCHAR));
-                    SysFreeString(Text);
-                    Buffer[BytesWritten] = ANSI_NULL;
-                }
-            }
-            DocumentRange->Release();
-        }
-        TextPattern->Release();
+        return BytesWritten;
     }
 
-    return BytesWritten;
+    /* Try UIA_TextPattern2Id */
+    BytesWritten = Util_UIA_GetTextFromDocumentPattern(Element, UIA_TextPattern2Id, Buffer, BufferCch);
+    if (BytesWritten > 0)
+    {
+        return BytesWritten;
+    }
+
+    /* Try UIA_TextChildPatternId */
+    if (SUCCEEDED(Element->GetCurrentPatternAs(UIA_TextChildPatternId, IID_PPV_ARGS(&TextChildPattern))))
+    {
+        if (SUCCEEDED(TextChildPattern->get_TextRange(&TextRange)))
+        {
+            BytesWritten = Util_UIA_GetTextFromTextRange(TextRange, Buffer, BufferCch);
+            TextRange->Release();
+        } else
+        {
+            BytesWritten = 0;
+        }
+        TextChildPattern->Release();
+        if (BytesWritten > 0)
+        {
+            return BytesWritten;
+        }
+    }
+
+    return 0;
 }
 
 _Success_(return != NULL)
