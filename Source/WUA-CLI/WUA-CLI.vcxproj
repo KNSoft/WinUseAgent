@@ -141,7 +141,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Operation.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -151,11 +150,12 @@
     <ClCompile Include="Tools\File\Recycle.cpp" />
     <ClCompile Include="Tools\Input\Mouse.cpp" />
     <ClCompile Include="Tools\Input\Text.cpp" />
-    <ClCompile Include="Tools\Window\Capture.cpp" />
-    <ClCompile Include="Tools\Window\List.cpp" />
+    <ClCompile Include="Tools\Window\Inspect.cpp" />
+    <ClCompile Include="Tools\Window\Operation.cpp" />
+    <ClCompile Include="Tools\Window\Snapshot.cpp" />
     <ClCompile Include="Utils\Gdip.cpp" />
     <ClCompile Include="Utils\Json.cpp" />
-    <ClCompile Include="Utils\String.cpp" />
+    <ClCompile Include="Utils\Process.cpp" />
     <ClCompile Include="Utils\UIA.cpp" />
     <ClCompile Include="Utils\Window.cpp" />
   </ItemGroup>

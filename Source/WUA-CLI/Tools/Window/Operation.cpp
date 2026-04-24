@@ -27,14 +27,18 @@ Command(VOID)
     if (_wcsicmp(Verb, L"Active") == 0)
     {
         ShowWindow(hWnd, SW_RESTORE);
-        Utils_Window_Active(hWnd);
+        if (Util_Window_IsCloaked(hWnd))
+        {
+            Util_Window_Uncloake(hWnd);
+        }
+        Util_Window_Active(hWnd);
     } else if (_wcsicmp(Verb, L"Minimize") == 0)
     {
         ShowWindow(hWnd, SW_MINIMIZE);
     } else if (_wcsicmp(Verb, L"Maximize") == 0)
     {
         ShowWindow(hWnd, SW_MAXIMIZE);
-        Utils_Window_Active(hWnd);
+        Util_Window_Active(hWnd);
     } else
     {
         return BuildErrorOutput(E_INVALIDARG, "Parameter \"Verb\" is invalid.");

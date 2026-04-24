@@ -11,6 +11,7 @@
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "oleaut32.lib")
 #pragma comment(lib, "uiautomationcore.lib")
+#pragma comment(lib, "Version.lib")
 
 #include "../3rdParty/cJSON/cJSON.h"
 

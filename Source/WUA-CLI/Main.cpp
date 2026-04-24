@@ -44,14 +44,14 @@ static WUA_KV Tool_Input[] = {
 #define DECL_COMMAND(Command) _DECL_COMMAND(Window, Command)
 #define DEF_COMMAND(Command) _DEF_COMMAND(Window, Command)
 
-DECL_COMMAND(Capture);
-DECL_COMMAND(List);
+DECL_COMMAND(Inspect);
 DECL_COMMAND(Operation);
+DECL_COMMAND(Snapshot);
 
 static WUA_KV Tool_Window[] = {
-    DEF_COMMAND(Capture),
-    DEF_COMMAND(List),
+    DEF_COMMAND(Inspect),
     DEF_COMMAND(Operation),
+    DEF_COMMAND(Snapshot),
     { NULL, NULL }
 };
 
@@ -265,6 +265,9 @@ wmain(
         InvalidParameter = InitCommandParameters(Command, argc - 3, argv + 3);
         if (InvalidParameter == NULL)
         {
+#ifdef _DEBUG
+            PS_DelayExec(2000);
+#endif
             j = Command->Func();
         } else
         {
@@ -276,12 +279,18 @@ wmain(
     }
 
     PSTR JsonText = cJSON_Print(j);
-    Status = IO_WriteFile(_Inline_GetStdHandle(STD_OUTPUT_HANDLE),
-                          NULL,
-                          JsonText,
-                          (ULONG)strlen(JsonText));
-    cJSON_free(JsonText);
-    cJSON_Delete(j);
+    if (JsonText != NULL)
+    {
+        Status = IO_WriteFile(_Inline_GetStdHandle(STD_OUTPUT_HANDLE),
+                              NULL,
+                              JsonText,
+                              (ULONG)strlen(JsonText));
+        cJSON_free(JsonText);
+        cJSON_Delete(j);
+    } else
+    {
+        Status = STATUS_NO_MEMORY;
+    }
 
     if (CPSet)
     {

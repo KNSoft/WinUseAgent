@@ -83,7 +83,7 @@ Command(VOID)
         {
             return BuildErrorOutput(E_INVALIDARG, "Parameter \"Handle\" is not a valid window handle.");
         }
-        if (GetForegroundWindow() != hWnd && !Utils_Window_Active(hWnd))
+        if (GetForegroundWindow() != hWnd && !Util_Window_Active(hWnd))
         {
             return BuildErrorOutput(E_FAIL, "Failed to activate specified window.");
         }

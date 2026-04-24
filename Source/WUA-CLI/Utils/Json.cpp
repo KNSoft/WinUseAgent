@@ -5,7 +5,7 @@ cJSON*
 Util_Json_AddUnicodeString(
     _In_ cJSON* j,
     _In_ PCSTR Key,
-    _In_reads_opt_(Length) PCWSTR String,
+    _In_reads_opt_(Length + 1) PCWSTR String,
     _In_opt_ ULONG Length)
 {
     UNICODE_STRING UnicodeString;

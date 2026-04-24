@@ -6,7 +6,7 @@
     <ClCompile Include="..\3rdParty\cJSON\cJSON.c">
       <Filter>3rdParty\cJSON</Filter>
     </ClCompile>
-    <ClCompile Include="Tools\Window\Capture.cpp">
+    <ClCompile Include="Tools\Window\Snapshot.cpp">
       <Filter>Tools\Window</Filter>
     </ClCompile>
     <ClCompile Include="Utils\Gdip.cpp">
@@ -15,20 +15,11 @@
     <ClCompile Include="Tools\File\Recycle.cpp">
       <Filter>Tools\File</Filter>
     </ClCompile>
-    <ClCompile Include="Tools\Window\List.cpp">
-      <Filter>Tools\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\Objects.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
     <ClCompile Include="Tools\Input\Text.cpp">
       <Filter>Tools\Input</Filter>
     </ClCompile>
     <ClCompile Include="Utils\Window.cpp">
       <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Operation.cpp">
-      <Filter>Tools\Window</Filter>
     </ClCompile>
     <ClCompile Include="Tools\Input\Mouse.cpp">
       <Filter>Tools\Input</Filter>
@@ -36,7 +27,16 @@
     <ClCompile Include="Utils\Json.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Utils\String.cpp">
+    <ClCompile Include="Utils\UIA.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\Window\Inspect.cpp">
+      <Filter>Tools\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\Window\Operation.cpp">
+      <Filter>Tools\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\Process.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>

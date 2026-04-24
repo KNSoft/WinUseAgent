@@ -1,5 +1,10 @@
 ﻿#include "pch.h"
 
+#define WUA_UIA_CONNECTION_TIMEOUT 2000
+#define WUA_UIA_TRANSACTION_TIMEOUT 10000
+#define WUA_UIA_MAX_DEPTH 16
+#define WUA_UIA_MAX_CHILDREN 256
+
 _Success_(return != NULL)
 _Ret_maybenull_
 IUIAutomation*
@@ -10,8 +15,8 @@ Util_UIA_CreateInstance(VOID)
 
     if (SUCCEEDED(CoCreateInstance(CLSID_CUIAutomation, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&UIA2))))
     {
-        UIA2->put_ConnectionTimeout(2000);
-        UIA2->put_TransactionTimeout(10000);
+        UIA2->put_ConnectionTimeout(WUA_UIA_CONNECTION_TIMEOUT);
+        UIA2->put_TransactionTimeout(WUA_UIA_TRANSACTION_TIMEOUT);
         return UIA2;
     }
 
@@ -53,8 +58,8 @@ Util_UIA_GetTextByProperty(
         if (Length > 0)
         {
             RtlUnicodeToUTF8N(Buffer, BufferCch - 1, &Written, Variant.bstrVal, Length * sizeof(WCHAR));
-            Buffer[Written] = ANSI_NULL;
         }
+        Buffer[Written] = ANSI_NULL;
         *BytesWritten = Written;
         Ret = TRUE;
     }
@@ -63,6 +68,7 @@ Util_UIA_GetTextByProperty(
 }
 
 static
+_Success_(return > 0)
 ULONG
 Util_UIA_GetTextFromTextRange(
     _In_ IUIAutomationTextRange * TextRange,
@@ -83,6 +89,7 @@ Util_UIA_GetTextFromTextRange(
 }
 
 static
+_Success_(return > 0)
 ULONG
 Util_UIA_GetTextFromDocumentPattern(
     _In_ IUIAutomationElement * Element,
@@ -161,19 +168,24 @@ Util_UIA_GetText(
     return 0;
 }
 
-_Success_(return != NULL)
-_Ret_maybenull_
+_Ret_notnull_
 cJSON*
-Utils_UIA_GetInfoJson(
+Util_UIA_GetInfoJson(
     _In_ IUIAutomationElement * Element)
 {
-    cJSON *j, *j_Bounds;
+    cJSON *j;
+    UIA_HWND uiaHwnd;
     BSTR bstr;
     RECT Rect;
     POINT pt;
     BOOL b;
 
     j = cJSON_CreateObject();
+
+    if (SUCCEEDED(Element->get_CurrentNativeWindowHandle(&uiaHwnd)))
+    {
+        Util_Json_AddWindowHandle(j, "window_handle", reinterpret_cast<HWND>(uiaHwnd));
+    }
 
     if (SUCCEEDED(Element->get_CurrentName(&bstr)))
     {
@@ -198,12 +210,10 @@ Utils_UIA_GetInfoJson(
 
     if (SUCCEEDED(Element->get_CurrentBoundingRectangle(&Rect)))
     {
-        j_Bounds = cJSON_CreateObject();
-        cJSON_AddNumberToObject(j_Bounds, "left", Rect.left);
-        cJSON_AddNumberToObject(j_Bounds, "top", Rect.top);
-        cJSON_AddNumberToObject(j_Bounds, "right", Rect.right);
-        cJSON_AddNumberToObject(j_Bounds, "bottom", Rect.bottom);
-        cJSON_AddItemToObject(j, "bounds", j_Bounds);
+        cJSON_AddNumberToObject(j, "left", Rect.left);
+        cJSON_AddNumberToObject(j, "top", Rect.top);
+        cJSON_AddNumberToObject(j, "right", Rect.right);
+        cJSON_AddNumberToObject(j, "bottom", Rect.bottom);
     }
 
     if (SUCCEEDED(Element->GetClickablePoint(&pt, &b)) && b)
@@ -228,4 +238,93 @@ Utils_UIA_GetInfoJson(
     }
 
     return j;
+}
+
+static
+_Ret_maybenull_
+cJSON*
+AppendChildrenInfoJson(
+    _In_ cJSON * j,
+    _In_ PCSTR Key,
+    _In_ IUIAutomationTreeWalker * Walker,
+    _In_ IUIAutomationElement * Element,
+    _In_ ULONG Depth)
+{
+    IUIAutomationElement *Child, *NextChild;
+    cJSON *jChildren, *jChild;
+    ULONG ChildCount;
+
+    if (Depth >= WUA_UIA_MAX_DEPTH)
+    {
+        return NULL;
+    }
+    if (FAILED(Walker->GetFirstChildElement(Element, &Child)) || Child == NULL)
+    {
+        return NULL;
+    }
+
+    jChildren = cJSON_CreateArray();
+    ChildCount = 0;
+    do
+    {
+        jChild = Util_UIA_GetInfoJson(Child);
+        AppendChildrenInfoJson(jChild, Key, Walker, Child, Depth + 1);
+        cJSON_AddItemToArray(jChildren, jChild);
+        ChildCount++;
+        if (ChildCount >= WUA_UIA_MAX_CHILDREN)
+        {
+            Child->Release();
+            break;
+        }
+        NextChild = NULL;
+        Walker->GetNextSiblingElement(Child, &NextChild);
+        Child->Release();
+        Child = NextChild;
+    } while (Child != NULL);
+
+    if (cJSON_GetArraySize(jChildren) > 0)
+    {
+        cJSON_AddItemToObject(j, Key, jChildren);
+    } else
+    {
+        cJSON_Delete(jChildren);
+        jChildren = NULL;
+    }
+
+    return jChildren;
+}
+
+_Ret_notnull_
+cJSON*
+Util_UIA_GetWindowElementJson(
+    _In_ HWND hWnd)
+{
+    HRESULT Hr;
+    IUIAutomation* UIA;
+    IUIAutomationElement* Element;
+    IUIAutomationTreeWalker* Walker;
+    cJSON* j;
+
+    j = NULL;
+    Hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    if ((SUCCEEDED(Hr) || Hr == RPC_E_CHANGED_MODE) &&
+        (UIA = Util_UIA_CreateInstance()) != NULL)
+    {
+        if (SUCCEEDED(UIA->ElementFromHandle(hWnd, &Element)))
+        {
+            if (SUCCEEDED(UIA->get_ControlViewWalker(&Walker)))
+            {
+                j = Util_UIA_GetInfoJson(Element);
+                AppendChildrenInfoJson(j, "children", Walker, Element, 0);
+                Walker->Release();
+            }
+            Element->Release();
+        }
+        UIA->Release();
+    }
+    if (SUCCEEDED(Hr))
+    {
+        CoUninitialize();
+    }
+    return j != NULL ? j : cJSON_CreateNull();
 }

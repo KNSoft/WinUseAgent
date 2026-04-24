@@ -1,51 +1,24 @@
 ﻿#include "pch.h"
 
-W32ERROR
-Util_Window_SendMsgTO(
-    _In_ HWND Window,
-    _In_ UINT Msg,
-    _In_ WPARAM wParam,
-    _In_ LPARAM lParam,
-    _Out_opt_ PDWORD_PTR lpdwResult)
-{
-    return UI_SendMessageTimeout(Window, Msg, wParam, lParam, SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 200, lpdwResult);
-}
-
-_Success_(return > 0)
-ULONG
-Utils_Window_GetHandleString(
-    _In_ HWND hWnd,
-    _Out_writes_(BufferCch) PSTR Buffer,
-    _In_ ULONG BufferCch)
-{
-    return Str_FromIntExA(UI_TruncateHandle32(hWnd), TRUE, 16, Buffer, BufferCch);
-}
-
-_Success_(return != FALSE)
-LOGICAL
-Utils_Window_Active(
-    _In_ HWND hWnd)
-{
-    BOOL b = BringWindowToTop(hWnd);
-    b |= SetForegroundWindow(hWnd);
-    return b;
-}
-
 _Success_(return != NULL)
 _Ret_maybenull_
 cJSON*
-Utils_Window_GetInfoJson(
+Util_Window_GetInfoJson(
     _In_ HWND hWnd)
 {
     cJSON *j;
-    CHAR sz[512];
+    CHAR sz[sizeof(UNICODE_STRING) + MAX_PATH * sizeof(WCHAR)];
     ULONG u, uMaxCchW = sizeof(sz) / sizeof(WCHAR);
     PWSTR psz = reinterpret_cast<PWSTR>(sz);
     DWORD dw;
     DWORD_PTR dwp;
+    BOOL b;
+    NTSTATUS Status;
+    HANDLE hProc;
+    PUNICODE_STRING pus = reinterpret_cast<PUNICODE_STRING>(sz);
 
     /* Handle */
-    if (!IsWindow(hWnd) || Utils_Window_GetHandleString(hWnd, sz, ARRAYSIZE(sz)) == 0)
+    if (!IsWindow(hWnd) || Util_Window_GetHandleString(hWnd, sz, ARRAYSIZE(sz)) == 0)
     {
         return NULL;
     }
@@ -73,13 +46,28 @@ Utils_Window_GetInfoJson(
         Util_Json_AddUnicodeString(j, "class", psz, u);
     }
 
-    /* Visibility */
-    cJSON_AddBoolToObject(j, "visible", IsWindowVisible(hWnd));
+    /* Minimized */
+    b = IsIconic(hWnd);
+    cJSON_AddBoolToObject(j, "minimized", b);
 
     /* PID */
     if (GetWindowThreadProcessId(hWnd, &dw) != 0 && dw != 0)
     {
         cJSON_AddNumberToObject(j, "pid", dw);
+        Status = PS_OpenProcess(&hProc, PROCESS_QUERY_LIMITED_INFORMATION, dw);
+        if (NT_SUCCESS(Status))
+        {
+            Status = NtQueryInformationProcess(hProc, ProcessImageFileNameWin32, sz, sizeof(sz), NULL);
+            if (NT_SUCCESS(Status))
+            {
+                Util_Json_AddUnicodeString(j, "process_path", pus->Buffer, pus->Length / sizeof(WCHAR));
+                if (Util_Proc_GetProductName(pus->Buffer, psz, uMaxCchW))
+                {
+                    Util_Json_AddUnicodeString(j, "process_product", psz, 0);
+                }
+            }
+            NtClose(hProc);
+        }
     }
 
     return j;
