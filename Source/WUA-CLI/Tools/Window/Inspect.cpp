@@ -5,7 +5,7 @@ static PWSTR OutFile;
 
 static WUA_COMMAND_PARAMETER Parameters[] = {
     DEF_PARAMETER_ENTRY(Handle, HexU32, FALSE),
-    DEF_PARAMETER_ENTRY(OutFile, String, TRUE),
+    DEF_PARAMETER_ENTRY(OutFile, String, FALSE),
 };
 
 WUA_COMMAND_FN Command;
@@ -26,21 +26,20 @@ Command(VOID)
     {
         return BuildErrorOutput(E_INVALIDARG, "Parameter \"Handle\" is not a valid top-level window handle.");
     }
-    if (OutFile == NULL || *OutFile == UNICODE_NULL)
-    {
-        return BuildErrorOutput(E_INVALIDARG, "Parameter \"OutFile\" is required.");
-    }
 
     /* Take snapshot */
-    j = Util_Gdip_SaveSnapshot(hWnd, OutFile);
-    if (j != NULL)
+    if (OutFile != NULL && *OutFile != UNICODE_NULL)
     {
-        return j;
+        j = Util_Gdip_SaveSnapshot(hWnd, OutFile);
+        if (j != NULL)
+        {
+            return j;
+        }
     }
 
     /* Get UIA elements */
     j = cJSON_CreateObject();
-    cJSON_AddItemToObject(j, "elements", Util_UIA_GetWindowElementJson(hWnd));
+    cJSON_AddItemToObject(j, "uia_tree", Util_UIA_GetWindowElementJson(hWnd));
 
     return BuildSuccessOutput(j);
 }

@@ -22,17 +22,14 @@ Command(VOID)
     LONG_PTR dwpExStyle;
     BYTE bAlpha;
 
-    /* Verify parameters */
-    if (OutFile == NULL || *OutFile == UNICODE_NULL)
-    {
-        return BuildErrorOutput(E_INVALIDARG, "Parameter \"OutFile\" is required.");
-    }
-
     /* Take snapshot */
-    j = Util_Gdip_SaveSnapshot(NULL, OutFile);
-    if (j != NULL)
+    if (OutFile != NULL && *OutFile != UNICODE_NULL)
     {
-        return j;
+        j = Util_Gdip_SaveSnapshot(NULL, OutFile);
+        if (j != NULL)
+        {
+            return j;
+        }
     }
 
     /* Get foreground windows information */
@@ -53,7 +50,7 @@ Command(VOID)
             cJSON_AddNumberToObject(j_CaretRect, "right", gti.rcCaret.right);
             cJSON_AddNumberToObject(j_CaretRect, "bottom", gti.rcCaret.bottom);
         }
-        cJSON_AddItemToObject(j_Active_Window, "elements", Util_UIA_GetWindowElementJson(gti.hwndActive));
+        cJSON_AddItemToObject(j_Active_Window, "uia_tree", Util_UIA_GetWindowElementJson(gti.hwndActive));
     } else
     {
         j_Active_Window = cJSON_CreateNull();
