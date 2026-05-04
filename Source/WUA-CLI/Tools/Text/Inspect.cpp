@@ -83,9 +83,6 @@ AddBom(
     } else if (Length >= 2 && Buffer[0] == 0xFE && Buffer[1] == 0xFF)
     {
         cJSON_AddStringToObject(j, "bom", "UTF-16BE");
-    } else
-    {
-        cJSON_AddNullToObject(j, "bom");
     }
 }
 
@@ -98,11 +95,10 @@ Command(VOID)
     const BYTE* Data;
     BYTE PreviousByte;
     cJSON* j;
-    DWORD Error;
+    IO_FILE_MAP MapInfo;
     HANDLE hFile;
-    HANDLE hMapping;
-    LARGE_INTEGER FileSize;
     LOGICAL HasPreviousByte;
+    NTSTATUS Status;
     ULONGLONG BytesRead;
     ULONGLONG CrLf;
     ULONGLONG CrOnly;
@@ -115,55 +111,45 @@ Command(VOID)
         return BuildErrorOutput(E_INVALIDARG, "Parameter \"File\" is required.");
     }
 
-    hFile = CreateFileW(File,
-                        GENERIC_READ,
-                        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                        NULL,
-                        OPEN_EXISTING,
-                        FILE_ATTRIBUTE_NORMAL,
-                        NULL);
-    if (hFile == INVALID_HANDLE_VALUE)
+    Status = IO_CreateWin32File(&hFile,
+                                File,
+                                NULL,
+                                FILE_READ_DATA | SYNCHRONIZE,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                FILE_OPEN,
+                                FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT | FILE_SEQUENTIAL_ONLY);
+    if (!NT_SUCCESS(Status))
     {
-        Error = GetLastError();
-        return BuildErrorOutput(HRESULT_FROM_WIN32(Error), "CreateFileW failed with error %lu.", Error);
+        return BuildErrorOutput(HRESULT_FROM_NT(Status), "IO_CreateWin32File failed with status 0x%08X.", Status);
     }
 
-    if (!GetFileSizeEx(hFile, &FileSize))
+    Status = IO_GetFileSize(hFile, &BytesRead);
+    if (!NT_SUCCESS(Status))
     {
-        Error = GetLastError();
-        CloseHandle(hFile);
-        return BuildErrorOutput(HRESULT_FROM_WIN32(Error), "GetFileSizeEx failed with error %lu.", Error);
+        NtClose(hFile);
+        return BuildErrorOutput(HRESULT_FROM_NT(Status), "IO_GetFileSize failed with status 0x%08X.", Status);
     }
 
-    hMapping = NULL;
     Data = NULL;
-    if (FileSize.QuadPart != 0)
+    RtlZeroMemory(&MapInfo, sizeof(MapInfo));
+    if (BytesRead != 0)
     {
-        hMapping = CreateFileMappingW(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
-        if (hMapping == NULL)
+        Status = IO_MapReadOnlyFile(hFile, &MapInfo);
+        if (!NT_SUCCESS(Status))
         {
-            Error = GetLastError();
-            CloseHandle(hFile);
-            return BuildErrorOutput(HRESULT_FROM_WIN32(Error), "CreateFileMappingW failed with error %lu.", Error);
+            NtClose(hFile);
+            return BuildErrorOutput(HRESULT_FROM_NT(Status), "IO_MapReadOnlyFile failed with status 0x%08X.", Status);
         }
-
-        Data = reinterpret_cast<const BYTE*>(MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0));
-        if (Data == NULL)
-        {
-            Error = GetLastError();
-            CloseHandle(hMapping);
-            CloseHandle(hFile);
-            return BuildErrorOutput(HRESULT_FROM_WIN32(Error), "MapViewOfFile failed with error %lu.", Error);
-        }
+        Data = reinterpret_cast<const BYTE*>(MapInfo.BaseAddress);
+        BytesRead = MapInfo.FileSize;
     }
 
     HasPreviousByte = FALSE;
     PreviousByte = 0;
-    BytesRead = 0;
     CrLf = 0;
     CrOnly = 0;
     LfOnly = 0;
-    for (LONGLONG i = 0; i < FileSize.QuadPart; i++)
+    for (SIZE_T i = 0; i < BytesRead; i++)
     {
         if (HasPreviousByte)
         {
@@ -187,7 +173,6 @@ Command(VOID)
         PreviousByte = Data[i];
         HasPreviousByte = TRUE;
     }
-    BytesRead = FileSize.QuadPart;
 
     if (HasPreviousByte)
     {
@@ -203,11 +188,9 @@ Command(VOID)
     FirstBytesLength = min((ULONGLONG)4, BytesRead);
     LastBytesLength = min((ULONGLONG)4, BytesRead);
 
-    CloseHandle(hFile);
-
     j = cJSON_CreateObject();
     Util_Json_AddUnicodeString(j, "file", File, 0);
-    cJSON_AddNumberToObject(j, "size", (DOUBLE)FileSize.QuadPart);
+    cJSON_AddNumberToObject(j, "size", (DOUBLE)BytesRead);
     cJSON_AddNumberToObject(j, "bytes_read", (DOUBLE)BytesRead);
     AddBom(j, Data, (ULONG)FirstBytesLength);
     cJSON_AddNumberToObject(j, "crlf", (DOUBLE)CrLf);
@@ -218,11 +201,8 @@ Command(VOID)
     AddFinalLineEnding(j, BytesRead == 0 ? NULL : Data + BytesRead - LastBytesLength, (ULONG)LastBytesLength);
     if (Data != NULL)
     {
-        UnmapViewOfFile(Data);
+        IO_UnmapFile(&MapInfo);
     }
-    if (hMapping != NULL)
-    {
-        CloseHandle(hMapping);
-    }
+    NtClose(hFile);
     return BuildSuccessOutput(j);
 }

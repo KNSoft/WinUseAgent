@@ -300,7 +300,8 @@ wmain(
         Status = IO_WriteFile(_Inline_GetStdHandle(STD_OUTPUT_HANDLE),
                               NULL,
                               JsonText,
-                              (ULONG)strlen(JsonText));
+                              (ULONG)strlen(JsonText),
+                              NULL);
         cJSON_free(JsonText);
         cJSON_Delete(j);
     } else
