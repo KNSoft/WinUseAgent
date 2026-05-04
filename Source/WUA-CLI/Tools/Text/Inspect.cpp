@@ -11,39 +11,15 @@ WUA_COMMAND Text_Inspect = { Parameters, ARRAYSIZE(Parameters), &Command };
 
 static
 VOID
-AddLineEndingName(
-    _In_ cJSON* j,
-    _In_ PCSTR Key,
-    _In_ ULONGLONG CrLf,
-    _In_ ULONGLONG LfOnly,
-    _In_ ULONGLONG CrOnly)
-{
-    ULONG Types;
-
-    Types = (CrLf != 0) + (LfOnly != 0) + (CrOnly != 0);
-    if (Types != 1)
-    {
-        cJSON_AddNullToObject(j, Key);
-    } else if (CrLf != 0)
-    {
-        cJSON_AddStringToObject(j, Key, "CRLF");
-    } else if (LfOnly != 0)
-    {
-        cJSON_AddStringToObject(j, Key, "LF");
-    } else
-    {
-        cJSON_AddStringToObject(j, Key, "CR");
-    }
-}
-
-static
-VOID
 AddFinalLineEnding(
     _In_ cJSON* j,
-    _In_reads_bytes_(Length) const BYTE* Buffer,
-    _In_ ULONG Length)
+    _In_reads_bytes_opt_(Length) const BYTE* Buffer,
+    _In_ ULONGLONG Length)
 {
-    if (Length >= 2 && Buffer[Length - 2] == '\r' && Buffer[Length - 1] == '\n')
+    if (Buffer == NULL || Length == 0)
+    {
+        cJSON_AddNullToObject(j, "final_line_ending");
+    } else if (Length >= 2 && Buffer[Length - 2] == '\r' && Buffer[Length - 1] == '\n')
     {
         cJSON_AddStringToObject(j, "final_line_ending", "CRLF");
     } else if (Length >= 1 && Buffer[Length - 1] == '\n')
@@ -62,9 +38,14 @@ static
 VOID
 AddBom(
     _In_ cJSON* j,
-    _In_reads_bytes_(Length) const BYTE* Buffer,
-    _In_ ULONG Length)
+    _In_reads_bytes_opt_(Length) const BYTE* Buffer,
+    _In_ ULONGLONG Length)
 {
+    if (Buffer == NULL)
+    {
+        return;
+    }
+
     if (Length >= 4 &&
         Buffer[0] == 0xFF && Buffer[1] == 0xFE && Buffer[2] == 0x00 && Buffer[3] == 0x00)
     {
@@ -99,12 +80,7 @@ Command(VOID)
     HANDLE hFile;
     LOGICAL HasPreviousByte;
     NTSTATUS Status;
-    ULONGLONG BytesRead;
-    ULONGLONG CrLf;
-    ULONGLONG CrOnly;
-    ULONGLONG FirstBytesLength;
-    ULONGLONG LastBytesLength;
-    ULONGLONG LfOnly;
+    ULONGLONG BytesRead, CrLf, CrOnly, LfOnly;
 
     if (File == NULL || *File == UNICODE_NULL)
     {
@@ -123,25 +99,17 @@ Command(VOID)
         return BuildErrorOutput(HRESULT_FROM_NT(Status), "IO_CreateWin32File failed with status 0x%08X.", Status);
     }
 
-    Status = IO_GetFileSize(hFile, &BytesRead);
-    if (!NT_SUCCESS(Status))
-    {
-        NtClose(hFile);
-        return BuildErrorOutput(HRESULT_FROM_NT(Status), "IO_GetFileSize failed with status 0x%08X.", Status);
-    }
-
     Data = NULL;
-    RtlZeroMemory(&MapInfo, sizeof(MapInfo));
-    if (BytesRead != 0)
+    BytesRead = 0;
+    Status = IO_MapReadOnlyFile(hFile, &MapInfo);
+    if (NT_SUCCESS(Status))
     {
-        Status = IO_MapReadOnlyFile(hFile, &MapInfo);
-        if (!NT_SUCCESS(Status))
-        {
-            NtClose(hFile);
-            return BuildErrorOutput(HRESULT_FROM_NT(Status), "IO_MapReadOnlyFile failed with status 0x%08X.", Status);
-        }
         Data = reinterpret_cast<const BYTE*>(MapInfo.BaseAddress);
         BytesRead = MapInfo.FileSize;
+    } else if (Status != STATUS_MAPPED_FILE_SIZE_ZERO)
+    {
+        NtClose(hFile);
+        return BuildErrorOutput(HRESULT_FROM_NT(Status), "IO_MapReadOnlyFile failed with status 0x%08X.", Status);
     }
 
     HasPreviousByte = FALSE;
@@ -185,20 +153,13 @@ Command(VOID)
         }
     }
 
-    FirstBytesLength = min((ULONGLONG)4, BytesRead);
-    LastBytesLength = min((ULONGLONG)4, BytesRead);
-
     j = cJSON_CreateObject();
-    Util_Json_AddUnicodeString(j, "file", File, 0);
     cJSON_AddNumberToObject(j, "size", (DOUBLE)BytesRead);
-    cJSON_AddNumberToObject(j, "bytes_read", (DOUBLE)BytesRead);
-    AddBom(j, Data, (ULONG)FirstBytesLength);
+    AddBom(j, Data, BytesRead);
     cJSON_AddNumberToObject(j, "crlf", (DOUBLE)CrLf);
     cJSON_AddNumberToObject(j, "lf_only", (DOUBLE)LfOnly);
     cJSON_AddNumberToObject(j, "cr_only", (DOUBLE)CrOnly);
-    cJSON_AddBoolToObject(j, "mixed", ((CrLf != 0) + (LfOnly != 0) + (CrOnly != 0)) > 1);
-    AddLineEndingName(j, "line_ending", CrLf, LfOnly, CrOnly);
-    AddFinalLineEnding(j, BytesRead == 0 ? NULL : Data + BytesRead - LastBytesLength, (ULONG)LastBytesLength);
+    AddFinalLineEnding(j, Data, BytesRead);
     if (Data != NULL)
     {
         IO_UnmapFile(&MapInfo);
