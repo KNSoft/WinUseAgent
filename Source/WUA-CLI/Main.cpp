@@ -58,6 +58,21 @@ static WUA_KV Tool_Window[] = {
 #undef DECL_COMMAND
 #undef DEF_COMMAND
 
+/* Text */
+
+#define DECL_COMMAND(Command) _DECL_COMMAND(Text, Command)
+#define DEF_COMMAND(Command) _DEF_COMMAND(Text, Command)
+
+DECL_COMMAND(Inspect);
+
+static WUA_KV Tool_Text[] = {
+    DEF_COMMAND(Inspect),
+    { NULL, NULL }
+};
+
+#undef DECL_COMMAND
+#undef DEF_COMMAND
+
 /* All Tools */
 
 #define DEF_TOOL(Tool) { L#Tool, &Tool_##Tool }
@@ -65,6 +80,7 @@ static WUA_KV Tool_Window[] = {
 static WUA_KV Tools[] = {
     DEF_TOOL(File),
     DEF_TOOL(Input),
+    DEF_TOOL(Text),
     DEF_TOOL(Window),
 };
 

@@ -24,6 +24,9 @@
     <ClCompile Include="Tools\Input\Mouse.cpp">
       <Filter>Tools\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Tools\Text\Inspect.cpp">
+      <Filter>Tools\Text</Filter>
+    </ClCompile>
     <ClCompile Include="Utils\Json.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
@@ -74,6 +77,9 @@
     </Filter>
     <Filter Include="Tools\Input">
       <UniqueIdentifier>{3cac2e7d-09a1-428c-8483-42fd02a9fb7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tools\Text">
+      <UniqueIdentifier>{05829a1d-2704-41d6-aae6-9088e191380d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
