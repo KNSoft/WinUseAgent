@@ -69,7 +69,9 @@ Command(VOID)
             !Util_Window_IsCloaked(hWnd) &&
             UI_GetWindowLong(hWnd, GWL_EXSTYLE, &dwpExStyle) == ERROR_SUCCESS &&
             !BooleanFlagOn(dwpExStyle, WS_EX_TRANSPARENT) &&
-            (!BooleanFlagOn(dwpExStyle, WS_EX_LAYERED) || !GetLayeredWindowAttributes(hWnd, NULL, &bAlpha, NULL) || bAlpha != 0))
+            (!BooleanFlagOn(dwpExStyle, WS_EX_LAYERED) ||
+             !GetLayeredWindowAttributes(hWnd, NULL, &bAlpha, NULL) ||
+             bAlpha != 0))
         {
             j_Window = Util_Window_GetInfoJson(hWnd);
             if (j_Window != NULL)

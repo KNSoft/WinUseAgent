@@ -122,7 +122,7 @@ Command(VOID)
     // Keep the temporary clipboard data alive briefly so the target window can
     // read it after the synthesized paste shortcut is delivered.
     //
-    Sleep(100);
+    Sleep(1000);
     j = BuildSuccessOutput(NULL);
 
 _Exit:

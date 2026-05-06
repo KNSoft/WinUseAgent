@@ -52,9 +52,9 @@ Util_Proc_GetProductName(
         return FALSE;
     }
     /* lpdwHandle can be NULL, wrong SAL annotation in Windows SDK */
-#pragma warning(disable: 6387)
+#pragma warning(disable: __WARNING_INVALID_PARAM_VALUE_1)
     dw = GetFileVersionInfoSizeExW(FILE_VER_GET_LOCALISED, File, NULL);
-#pragma warning(default: 6387)
+#pragma warning(default: __WARNING_INVALID_PARAM_VALUE_1)
     if (dw == 0)
     {
         return FALSE;
