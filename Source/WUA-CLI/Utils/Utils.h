@@ -148,12 +148,12 @@ Util_Json_AddBstr(
     _In_ PCSTR Key,
     _In_opt_ BSTR Value);
 
-_Ret_notnull_
+_Ret_maybenull_
 cJSON*
 Util_Json_AddVariant(
-    _In_ cJSON * j,
+    _In_ cJSON* j,
     _In_ PCSTR Key,
-    _In_opt_ LPVARIANT Value);
+    _In_ LPVARIANT Value);
 
 #pragma endregion
 

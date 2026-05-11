@@ -15,9 +15,11 @@ _Ret_notnull_
 cJSON*
 Command(VOID)
 {
-    cJSON *j, *j_Active_Window, *j_Windows, *j_Window, *j_CaretRect;
+    cJSON *j, *j_Active_Window, *j_Windows, *j_Window, *j_CaretRect, *j_Virtual_Screen;
     HWND hWnd;
     GUITHREADINFO gti;
+    POINT pt;
+    SIZE size;
     RECT rc;
     LONG_PTR dwpExStyle;
     BYTE bAlpha;
@@ -32,8 +34,16 @@ Command(VOID)
         }
     }
 
-    /* Get foreground windows information */
+    /* Get virtual screen position and size */
     j = cJSON_CreateObject();
+    UI_GetScreenPos(&pt, &size);
+    j_Virtual_Screen = cJSON_AddObjectToObject(j, "virtual_screen");
+    cJSON_AddNumberToObject(j_Virtual_Screen, "left", pt.x);
+    cJSON_AddNumberToObject(j_Virtual_Screen, "top", pt.y);
+    cJSON_AddNumberToObject(j_Virtual_Screen, "right", pt.x + size.cx);
+    cJSON_AddNumberToObject(j_Virtual_Screen, "bottom", pt.y + size.cy);
+
+    /* Get foreground windows information */
     gti.cbSize = sizeof(gti);
     if (GetGUIThreadInfo(0, &gti) && gti.hwndActive != NULL && IsTopLevelWindow(gti.hwndActive))
     {

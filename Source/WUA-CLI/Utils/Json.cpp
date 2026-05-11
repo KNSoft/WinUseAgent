@@ -51,18 +51,13 @@ Util_Json_AddBstr(
     }
 }
 
-_Ret_notnull_
+_Ret_maybenull_
 cJSON*
 Util_Json_AddVariant(
     _In_ cJSON* j,
     _In_ PCSTR Key,
-    _In_opt_ LPVARIANT Value)
+    _In_ LPVARIANT Value)
 {
-    if (Value == NULL)
-    {
-        return cJSON_AddNullToObject(j, Key);
-    }
-
     if (Value->vt == VT_BSTR)
     {
         return Util_Json_AddBstr(j, Key, Value->bstrVal);
@@ -101,5 +96,5 @@ Util_Json_AddVariant(
         return cJSON_AddNumberToObject(j, Key, Value->uintVal);
     }
 
-    return cJSON_AddNullToObject(j, Key);
+    return NULL;
 }
