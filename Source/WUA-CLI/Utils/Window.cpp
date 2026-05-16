@@ -72,3 +72,28 @@ Util_Window_GetInfoJson(
 
     return j;
 }
+
+_Ret_notnull_
+cJSON*
+Util_Window_GetGUIInfoJson(
+    _In_ PGUITHREADINFO Info,
+    _In_opt_ HWND CaretMapWindow)
+{
+    cJSON *j, *j_CaretRect;
+
+    j = cJSON_CreateObject();
+    Util_Json_AddWindowHandle(j, "handle", Info->hwndActive);
+    Util_Json_AddWindowHandle(j, "focus_handle", Info->hwndFocus);
+    Util_Json_AddWindowHandle(j, "caret_handle", Info->hwndCaret);
+    if (Info->hwndCaret != NULL && Util_Window_GetRoot(Info->hwndCaret) == Info->hwndActive)
+    {
+        MapWindowPoints(Info->hwndCaret, CaretMapWindow, (LPPOINT)&Info->rcCaret, 2);
+        j_CaretRect = cJSON_AddObjectToObject(j, "caret_rectangle");
+        cJSON_AddNumberToObject(j_CaretRect, "left", Info->rcCaret.left);
+        cJSON_AddNumberToObject(j_CaretRect, "top", Info->rcCaret.top);
+        cJSON_AddNumberToObject(j_CaretRect, "right", Info->rcCaret.right);
+        cJSON_AddNumberToObject(j_CaretRect, "bottom", Info->rcCaret.bottom);
+    }
+
+    return j;
+}

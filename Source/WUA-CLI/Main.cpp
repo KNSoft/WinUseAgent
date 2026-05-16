@@ -39,6 +39,25 @@ static WUA_KV Tool_Input[] = {
 #undef DECL_COMMAND
 #undef DEF_COMMAND
 
+/* Run */
+
+#define DECL_COMMAND(Command) _DECL_COMMAND(Run, Command)
+#define DEF_COMMAND(Command) _DEF_COMMAND(Run, Command)
+
+DECL_COMMAND(Elevate);
+DECL_COMMAND(Locate);
+DECL_COMMAND(Restrict);
+
+static WUA_KV Tool_Run[] = {
+    DEF_COMMAND(Elevate),
+    DEF_COMMAND(Locate),
+    DEF_COMMAND(Restrict),
+    { NULL, NULL }
+};
+
+#undef DECL_COMMAND
+#undef DEF_COMMAND
+
 /* Window */
 
 #define DECL_COMMAND(Command) _DECL_COMMAND(Window, Command)
@@ -80,6 +99,7 @@ static WUA_KV Tool_Text[] = {
 static WUA_KV Tools[] = {
     DEF_TOOL(File),
     DEF_TOOL(Input),
+    DEF_TOOL(Run),
     DEF_TOOL(Text),
     DEF_TOOL(Window),
 };
@@ -142,6 +162,107 @@ BuildSuccessOutput(
 }
 
 static
+SIZE_T
+GetQuotedArgCch(
+    _In_ PCWSTR Arg)
+{
+    SIZE_T cch, BackslashCount;
+
+    cch = 2;
+    BackslashCount = 0;
+    for (PCWSTR p = Arg; *p != UNICODE_NULL; p++)
+    {
+        if (*p == L'\\')
+        {
+            BackslashCount++;
+        } else if (*p == L'"')
+        {
+            cch += BackslashCount + 2;
+            BackslashCount = 0;
+        } else
+        {
+            BackslashCount = 0;
+        }
+        cch++;
+    }
+    cch += BackslashCount;
+    return cch;
+}
+
+static
+PWSTR
+AppendQuotedArg(
+    _In_ PWSTR Dst,
+    _In_ PCWSTR Arg)
+{
+    SIZE_T BackslashCount;
+
+    *Dst++ = L'"';
+    BackslashCount = 0;
+    for (PCWSTR p = Arg; *p != UNICODE_NULL; p++)
+    {
+        if (*p == L'\\')
+        {
+            BackslashCount++;
+            *Dst++ = *p;
+        } else if (*p == L'"')
+        {
+            for (SIZE_T i = 0; i <= BackslashCount; i++)
+            {
+                *Dst++ = L'\\';
+            }
+            *Dst++ = *p;
+            BackslashCount = 0;
+        } else
+        {
+            BackslashCount = 0;
+            *Dst++ = *p;
+        }
+    }
+    for (SIZE_T i = 0; i < BackslashCount; i++)
+    {
+        *Dst++ = L'\\';
+    }
+    *Dst++ = L'"';
+    return Dst;
+}
+
+_Ret_maybenull_
+PWSTR
+BuildCommandLineWithProgram(
+    _In_ PCWSTR Program,
+    _In_opt_ PCWSTR Arguments)
+{
+    SIZE_T cch;
+    PWSTR CommandLine, p;
+
+    cch = GetQuotedArgCch(Program) + 1;
+    if (Arguments != NULL && *Arguments != UNICODE_NULL)
+    {
+        cch++;
+        cch += wcslen(Arguments);
+    }
+
+    CommandLine = reinterpret_cast<PWSTR>(Mem_Alloc(cch * sizeof(WCHAR)));
+    if (CommandLine == NULL)
+    {
+        return NULL;
+    }
+
+    p = AppendQuotedArg(CommandLine, Program);
+    if (Arguments != NULL && *Arguments != UNICODE_NULL)
+    {
+        *p++ = L' ';
+        while (*Arguments != UNICODE_NULL)
+        {
+            *p++ = *Arguments++;
+        }
+    }
+    *p = UNICODE_NULL;
+    return CommandLine;
+}
+
+static
 _Success_(return != FALSE)
 LOGICAL
 FindCommand(
@@ -170,6 +291,105 @@ static
 _Success_(return == NULL)
 _Ret_maybenull_
 PCWSTR
+SetCommandArguments(
+    _Inout_ PWUA_COMMAND Command,
+    _In_ PCWSTR InvalidParameter,
+    _In_ PCWSTR Arguments)
+{
+    for (ULONG i = 0; i < Command->ParameterCount; i++)
+    {
+        if (Command->Parameters[i].Type == WUA_Parameter_Arguments &&
+            Command->Parameters[i].SizeOfBuffer == sizeof(PWSTR))
+        {
+            PWSTR* p = reinterpret_cast<PWSTR*>(Command->Parameters[i].Buffer);
+            *p = const_cast<PWSTR>(Arguments);
+            Command->Parameters[i].SizeOfBuffer = 0;
+            return NULL;
+        }
+    }
+    return InvalidParameter;
+}
+
+static
+PCWSTR
+SkipCommandLineSpaces(
+    _In_ PCWSTR p)
+{
+    while (*p == L' ' || *p == L'\t')
+    {
+        p++;
+    }
+    return p;
+}
+
+static
+LOGICAL
+IsCommandLineTokenDelimiter(
+    _In_ WCHAR Ch)
+{
+    return Ch == UNICODE_NULL || Ch == L' ' || Ch == L'\t';
+}
+
+static
+PCWSTR
+FindRawArguments(
+    VOID)
+{
+    PCWSTR p;
+    LOGICAL InQuotes;
+    LOGICAL TokenStart;
+    ULONG Backslashes;
+
+    p = GetCommandLineW();
+    InQuotes = FALSE;
+    TokenStart = TRUE;
+    Backslashes = 0;
+    for (; *p != UNICODE_NULL; p++)
+    {
+        if (!InQuotes && (*p == L' ' || *p == L'\t'))
+        {
+            TokenStart = TRUE;
+            Backslashes = 0;
+            continue;
+        }
+
+        if (*p == L'\\')
+        {
+            Backslashes++;
+            TokenStart = FALSE;
+            continue;
+        }
+
+        if (*p == L'"')
+        {
+            if ((Backslashes % 2) == 0)
+            {
+                InQuotes = !InQuotes;
+            }
+            TokenStart = FALSE;
+            Backslashes = 0;
+            continue;
+        }
+
+        Backslashes = 0;
+        if (!InQuotes &&
+            TokenStart &&
+            p[0] == L'-' &&
+            p[1] == L'-' &&
+            IsCommandLineTokenDelimiter(p[2]))
+        {
+            return SkipCommandLineSpaces(p + 2);
+        }
+
+        TokenStart = FALSE;
+    }
+    return L"";
+}
+
+static
+_Success_(return == NULL)
+_Ret_maybenull_
+PCWSTR
 InitCommandParameters(
     _Inout_ PWUA_COMMAND Command,
     _In_ int argc,
@@ -182,6 +402,10 @@ InitCommandParameters(
     {
         pszArg = argv[i];
         pszValue = NULL;
+        if (wcscmp(pszArg, L"--") == 0)
+        {
+            return SetCommandArguments(Command, pszArg, FindRawArguments());
+        }
         for (ULONG j = 0; j < Command->ParameterCount; j++)
         {
             uKeyLen = (ULONG)wcslen(Command->Parameters[j].Name);

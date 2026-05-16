@@ -17,8 +17,9 @@ _Ret_notnull_
 cJSON*
 Command(VOID)
 {
-    cJSON *j;
+    cJSON *j, *j_Active_Window;
     HWND hWnd;
+    GUITHREADINFO gti;
 
     /* Verify parameters */
     hWnd = reinterpret_cast<HWND>(UI_32ToHandle(Handle));
@@ -37,8 +38,19 @@ Command(VOID)
         }
     }
 
-    /* Get UIA elements */
+    /* Get foreground window information when the inspected window is active */
     j = cJSON_CreateObject();
+    gti.cbSize = sizeof(gti);
+    if (GetGUIThreadInfo(0, &gti) && gti.hwndActive == hWnd)
+    {
+        j_Active_Window = Util_Window_GetGUIInfoJson(&gti, hWnd);
+    } else
+    {
+        j_Active_Window = cJSON_CreateNull();
+    }
+    cJSON_AddItemToObject(j, "active_window", j_Active_Window);
+
+    /* Get UIA elements */
     cJSON_AddItemToObject(j, "uia_tree", Util_UIA_GetWindowElementJson(hWnd));
 
     return BuildSuccessOutput(j);

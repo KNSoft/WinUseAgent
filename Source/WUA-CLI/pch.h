@@ -36,6 +36,7 @@ typedef enum
     WUA_Parameter_IntU32,       // UINT
     WUA_Parameter_Int32,        // INT
     WUA_Parameter_Bool,         // LOGICAL
+    WUA_Parameter_Arguments,    // PWSTR
 } WUA_COMMAND_PARAMETER_TYPE;
 
 typedef struct _WUA_COMMAND_PARAMETER
@@ -68,3 +69,9 @@ BuildErrorOutput(
 cJSON*
 BuildSuccessOutput(
     _In_opt_ cJSON* Result);
+
+_Ret_maybenull_
+PWSTR
+BuildCommandLineWithProgram(
+    _In_ PCWSTR Program,
+    _In_opt_ PCWSTR Arguments);

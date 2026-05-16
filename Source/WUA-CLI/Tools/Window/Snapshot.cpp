@@ -15,7 +15,7 @@ _Ret_notnull_
 cJSON*
 Command(VOID)
 {
-    cJSON *j, *j_Active_Window, *j_Windows, *j_Window, *j_CaretRect, *j_Virtual_Screen;
+    cJSON *j, *j_Active_Window, *j_Windows, *j_Window, *j_Virtual_Screen;
     HWND hWnd;
     GUITHREADINFO gti;
     POINT pt;
@@ -47,19 +47,7 @@ Command(VOID)
     gti.cbSize = sizeof(gti);
     if (GetGUIThreadInfo(0, &gti) && gti.hwndActive != NULL && IsTopLevelWindow(gti.hwndActive))
     {
-        j_Active_Window = cJSON_CreateObject();
-        Util_Json_AddWindowHandle(j_Active_Window, "handle", gti.hwndActive);
-        Util_Json_AddWindowHandle(j_Active_Window, "focus_handle", gti.hwndFocus);
-        Util_Json_AddWindowHandle(j_Active_Window, "caret_handle", gti.hwndCaret);
-        if (gti.hwndCaret != NULL && Util_Window_GetRoot(gti.hwndCaret) == gti.hwndActive)
-        {
-            MapWindowPoints(gti.hwndCaret, HWND_DESKTOP, (LPPOINT)&gti.rcCaret, 2);
-            j_CaretRect = cJSON_AddObjectToObject(j_Active_Window, "caret_rectangle");
-            cJSON_AddNumberToObject(j_CaretRect, "left", gti.rcCaret.left);
-            cJSON_AddNumberToObject(j_CaretRect, "top", gti.rcCaret.top);
-            cJSON_AddNumberToObject(j_CaretRect, "right", gti.rcCaret.right);
-            cJSON_AddNumberToObject(j_CaretRect, "bottom", gti.rcCaret.bottom);
-        }
+        j_Active_Window = Util_Window_GetGUIInfoJson(&gti, HWND_DESKTOP);
         cJSON_AddItemToObject(j_Active_Window, "uia_tree", Util_UIA_GetWindowElementJson(gti.hwndActive));
     } else
     {

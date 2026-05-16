@@ -90,6 +90,12 @@ cJSON*
 Util_Window_GetInfoJson(
     _In_ HWND hWnd);
 
+_Ret_notnull_
+cJSON*
+Util_Window_GetGUIInfoJson(
+    _In_ PGUITHREADINFO Info,
+    _In_opt_ HWND CaretMapWindow);
+
 #pragma endregion
 
 _Success_(return != NULL)

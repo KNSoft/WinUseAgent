@@ -24,6 +24,15 @@
     <ClCompile Include="Tools\Input\Mouse.cpp">
       <Filter>Tools\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Tools\Run\Elevate.cpp">
+      <Filter>Tools\Run</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\Run\Locate.cpp">
+      <Filter>Tools\Run</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\Run\Restrict.cpp">
+      <Filter>Tools\Run</Filter>
+    </ClCompile>
     <ClCompile Include="Tools\Text\Inspect.cpp">
       <Filter>Tools\Text</Filter>
     </ClCompile>
@@ -80,6 +89,9 @@
     </Filter>
     <Filter Include="Tools\Text">
       <UniqueIdentifier>{05829a1d-2704-41d6-aae6-9088e191380d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tools\Run">
+      <UniqueIdentifier>{d6156a21-0454-4df0-85eb-d0f0dd582f8c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
