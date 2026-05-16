@@ -32,6 +32,10 @@ Command(VOID)
             Util_Window_Uncloake(hWnd);
         }
         Util_Window_Active(hWnd);
+        if (GetForegroundWindow() != hWnd)
+        {
+            return BuildErrorOutput(E_FAIL, "Failed to activate the window.");
+        }
     } else if (_wcsicmp(Verb, L"Minimize") == 0)
     {
         ShowWindow(hWnd, SW_MINIMIZE);
