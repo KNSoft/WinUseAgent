@@ -3,9 +3,6 @@
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="..\3rdParty\cJSON\cJSON.c">
-      <Filter>3rdParty\cJSON</Filter>
-    </ClCompile>
     <ClCompile Include="Tools\Window\Snapshot.cpp">
       <Filter>Tools\Window</Filter>
     </ClCompile>
@@ -54,9 +51,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="..\3rdParty\cJSON\cJSON.h">
-      <Filter>3rdParty\cJSON</Filter>
-    </ClInclude>
     <ClInclude Include="Utils\Utils.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -66,12 +60,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="3rdParty">
-      <UniqueIdentifier>{5e71cb37-7b28-4106-8c82-64324b90860b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="3rdParty\cJSON">
-      <UniqueIdentifier>{a81b62aa-7986-4146-9e75-ce60068a2f21}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Tools">
       <UniqueIdentifier>{a557ed21-0d10-48de-a8f3-b58701fd6e2b}</UniqueIdentifier>
     </Filter>

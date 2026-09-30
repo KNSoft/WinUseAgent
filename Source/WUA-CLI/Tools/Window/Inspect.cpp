@@ -13,11 +13,11 @@ WUA_COMMAND Window_Inspect = { Parameters, ARRAYSIZE(Parameters), &Command };
 
 static
 _Function_class_(WUA_COMMAND_FN)
-_Ret_notnull_
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 Command(VOID)
 {
-    cJSON *j, *j_Active_Window;
+    IJsonObject *j, *j_Active_Window = NULL, *j_UIA;
     HWND hWnd;
     GUITHREADINFO gti;
 
@@ -39,19 +39,31 @@ Command(VOID)
     }
 
     /* Get foreground window information when the inspected window is active */
-    j = cJSON_CreateObject();
+    j = Util_Json_CreateObject();
     gti.cbSize = sizeof(gti);
     if (GetGUIThreadInfo(0, &gti) && gti.hwndActive == hWnd)
     {
         j_Active_Window = Util_Window_GetGUIInfoJson(&gti, hWnd);
+    }
+    if (j_Active_Window != NULL)
+    {
+        Util_Json_AddItemToObject(j, L"active_window", j_Active_Window);
+        j_Active_Window->Release();
     } else
     {
-        j_Active_Window = cJSON_CreateNull();
+        Util_Json_AddNullToObject(j, L"active_window");
     }
-    cJSON_AddItemToObject(j, "active_window", j_Active_Window);
 
     /* Get UIA elements */
-    cJSON_AddItemToObject(j, "uia_tree", Util_UIA_GetWindowElementJson(hWnd));
+    j_UIA = Util_UIA_GetWindowElementJson(hWnd);
+    if (j_UIA != NULL)
+    {
+        Util_Json_AddItemToObject(j, L"uia_tree", j_UIA);
+        j_UIA->Release();
+    } else
+    {
+        Util_Json_AddNullToObject(j, L"uia_tree");
+    }
 
     return BuildSuccessOutput(j);
 }

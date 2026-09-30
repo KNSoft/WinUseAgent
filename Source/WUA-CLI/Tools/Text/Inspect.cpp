@@ -12,32 +12,32 @@ WUA_COMMAND Text_Inspect = { Parameters, ARRAYSIZE(Parameters), &Command };
 static
 VOID
 AddFinalLineEnding(
-    _In_ cJSON* j,
+    _In_opt_ IJsonObject* j,
     _In_reads_bytes_opt_(Length) const BYTE* Buffer,
     _In_ ULONGLONG Length)
 {
     if (Buffer == NULL || Length == 0)
     {
-        cJSON_AddNullToObject(j, "final_line_ending");
+        Util_Json_AddNullToObject(j, L"final_line_ending");
     } else if (Length >= 2 && Buffer[Length - 2] == '\r' && Buffer[Length - 1] == '\n')
     {
-        cJSON_AddStringToObject(j, "final_line_ending", "CRLF");
+        Util_Json_AddStringToObject(j, L"final_line_ending", "CRLF");
     } else if (Length >= 1 && Buffer[Length - 1] == '\n')
     {
-        cJSON_AddStringToObject(j, "final_line_ending", "LF");
+        Util_Json_AddStringToObject(j, L"final_line_ending", "LF");
     } else if (Length >= 1 && Buffer[Length - 1] == '\r')
     {
-        cJSON_AddStringToObject(j, "final_line_ending", "CR");
+        Util_Json_AddStringToObject(j, L"final_line_ending", "CR");
     } else
     {
-        cJSON_AddNullToObject(j, "final_line_ending");
+        Util_Json_AddNullToObject(j, L"final_line_ending");
     }
 }
 
 static
 VOID
 AddBom(
-    _In_ cJSON* j,
+    _In_opt_ IJsonObject* j,
     _In_reads_bytes_opt_(Length) const BYTE* Buffer,
     _In_ ULONGLONG Length)
 {
@@ -49,33 +49,33 @@ AddBom(
     if (Length >= 4 &&
         Buffer[0] == 0xFF && Buffer[1] == 0xFE && Buffer[2] == 0x00 && Buffer[3] == 0x00)
     {
-        cJSON_AddStringToObject(j, "bom", "UTF-32LE");
+        Util_Json_AddStringToObject(j, L"bom", "UTF-32LE");
     } else if (Length >= 4 &&
                Buffer[0] == 0x00 && Buffer[1] == 0x00 && Buffer[2] == 0xFE && Buffer[3] == 0xFF)
     {
-        cJSON_AddStringToObject(j, "bom", "UTF-32BE");
+        Util_Json_AddStringToObject(j, L"bom", "UTF-32BE");
     } else if (Length >= 3 &&
                Buffer[0] == 0xEF && Buffer[1] == 0xBB && Buffer[2] == 0xBF)
     {
-        cJSON_AddStringToObject(j, "bom", "UTF-8");
+        Util_Json_AddStringToObject(j, L"bom", "UTF-8");
     } else if (Length >= 2 && Buffer[0] == 0xFF && Buffer[1] == 0xFE)
     {
-        cJSON_AddStringToObject(j, "bom", "UTF-16LE");
+        Util_Json_AddStringToObject(j, L"bom", "UTF-16LE");
     } else if (Length >= 2 && Buffer[0] == 0xFE && Buffer[1] == 0xFF)
     {
-        cJSON_AddStringToObject(j, "bom", "UTF-16BE");
+        Util_Json_AddStringToObject(j, L"bom", "UTF-16BE");
     }
 }
 
 static
 _Function_class_(WUA_COMMAND_FN)
-_Ret_notnull_
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 Command(VOID)
 {
     const BYTE* Data;
     BYTE PreviousByte;
-    cJSON* j;
+    IJsonObject* j;
     IO_FILE_MAP MapInfo;
     HANDLE hFile;
     LOGICAL HasPreviousByte;
@@ -153,12 +153,12 @@ Command(VOID)
         }
     }
 
-    j = cJSON_CreateObject();
-    cJSON_AddNumberToObject(j, "size", (DOUBLE)BytesRead);
+    j = Util_Json_CreateObject();
+    Util_Json_AddNumberToObject(j, L"size", (DOUBLE)BytesRead);
     AddBom(j, Data, BytesRead);
-    cJSON_AddNumberToObject(j, "crlf", (DOUBLE)CrLf);
-    cJSON_AddNumberToObject(j, "lf_only", (DOUBLE)LfOnly);
-    cJSON_AddNumberToObject(j, "cr_only", (DOUBLE)CrOnly);
+    Util_Json_AddNumberToObject(j, L"crlf", (DOUBLE)CrLf);
+    Util_Json_AddNumberToObject(j, L"lf_only", (DOUBLE)LfOnly);
+    Util_Json_AddNumberToObject(j, L"cr_only", (DOUBLE)CrOnly);
     AddFinalLineEnding(j, Data, BytesRead);
     if (Data != NULL)
     {

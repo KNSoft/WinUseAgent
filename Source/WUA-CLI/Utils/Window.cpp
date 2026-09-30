@@ -2,11 +2,11 @@
 
 _Success_(return != NULL)
 _Ret_maybenull_
-cJSON*
+IJsonObject*
 Util_Window_GetInfoJson(
     _In_ HWND hWnd)
 {
-    cJSON *j;
+    IJsonObject* j;
     CHAR sz[sizeof(UNICODE_STRING) + MAX_PATH * sizeof(WCHAR)];
     ULONG u, uMaxCchW = sizeof(sz) / sizeof(WCHAR);
     PWSTR psz = reinterpret_cast<PWSTR>(sz);
@@ -22,8 +22,8 @@ Util_Window_GetInfoJson(
     {
         return NULL;
     }
-    j = cJSON_CreateObject();
-    cJSON_AddStringToObject(j, "handle", sz);
+    j = Util_Json_CreateObject();
+    Util_Json_AddStringToObject(j, L"handle", sz);
 
     /* Title */
     if (Util_Window_SendMsgTO(hWnd, WM_GETTEXT, uMaxCchW, (LPARAM)psz, &dwp) == ERROR_SUCCESS)
@@ -31,11 +31,11 @@ Util_Window_GetInfoJson(
         u = (ULONG)dwp;
         if (u == 0)
         {
-            cJSON_AddNullToObject(j, "title");
+            Util_Json_AddNullToObject(j, L"title");
         } else if (u < uMaxCchW)
         {
             psz[u] = UNICODE_NULL;
-            Util_Json_AddUnicodeString(j, "title", psz, u);
+            Util_Json_AddUnicodeString(j, L"title", psz, u);
         }
     }
 
@@ -43,27 +43,27 @@ Util_Window_GetInfoJson(
     u = GetClassNameW(hWnd, psz, uMaxCchW);
     if (u > 0)
     {
-        Util_Json_AddUnicodeString(j, "class", psz, u);
+        Util_Json_AddUnicodeString(j, L"class", psz, u);
     }
 
     /* Minimized */
     b = IsIconic(hWnd);
-    cJSON_AddBoolToObject(j, "minimized", b);
+    Util_Json_AddBoolToObject(j, L"minimized", b);
 
     /* PID */
     if (GetWindowThreadProcessId(hWnd, &dw) != 0 && dw != 0)
     {
-        cJSON_AddNumberToObject(j, "pid", dw);
+        Util_Json_AddNumberToObject(j, L"pid", dw);
         Status = PS_OpenProcess(&hProc, PROCESS_QUERY_LIMITED_INFORMATION, dw);
         if (NT_SUCCESS(Status))
         {
             Status = NtQueryInformationProcess(hProc, ProcessImageFileNameWin32, sz, sizeof(sz), NULL);
             if (NT_SUCCESS(Status))
             {
-                Util_Json_AddUnicodeString(j, "process_path", pus->Buffer, pus->Length / sizeof(WCHAR));
+                Util_Json_AddUnicodeString(j, L"process_path", pus->Buffer, pus->Length / sizeof(WCHAR));
                 if (Util_Proc_GetProductName(pus->Buffer, psz, uMaxCchW))
                 {
-                    Util_Json_AddUnicodeString(j, "process_product", psz, 0);
+                    Util_Json_AddUnicodeString(j, L"process_product", psz, 0);
                 }
             }
             NtClose(hProc);
@@ -73,26 +73,30 @@ Util_Window_GetInfoJson(
     return j;
 }
 
-_Ret_notnull_
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 Util_Window_GetGUIInfoJson(
     _In_ PGUITHREADINFO Info,
     _In_opt_ HWND CaretMapWindow)
 {
-    cJSON *j, *j_CaretRect;
+    IJsonObject *j, *j_CaretRect;
 
-    j = cJSON_CreateObject();
-    Util_Json_AddWindowHandle(j, "handle", Info->hwndActive);
-    Util_Json_AddWindowHandle(j, "focus_handle", Info->hwndFocus);
-    Util_Json_AddWindowHandle(j, "caret_handle", Info->hwndCaret);
+    j = Util_Json_CreateObject();
+    Util_Json_AddWindowHandle(j, L"handle", Info->hwndActive);
+    Util_Json_AddWindowHandle(j, L"focus_handle", Info->hwndFocus);
+    Util_Json_AddWindowHandle(j, L"caret_handle", Info->hwndCaret);
     if (Info->hwndCaret != NULL && Util_Window_GetRoot(Info->hwndCaret) == Info->hwndActive)
     {
         MapWindowPoints(Info->hwndCaret, CaretMapWindow, (LPPOINT)&Info->rcCaret, 2);
-        j_CaretRect = cJSON_AddObjectToObject(j, "caret_rectangle");
-        cJSON_AddNumberToObject(j_CaretRect, "left", Info->rcCaret.left);
-        cJSON_AddNumberToObject(j_CaretRect, "top", Info->rcCaret.top);
-        cJSON_AddNumberToObject(j_CaretRect, "right", Info->rcCaret.right);
-        cJSON_AddNumberToObject(j_CaretRect, "bottom", Info->rcCaret.bottom);
+        j_CaretRect = Util_Json_AddObjectToObject(j, L"caret_rectangle");
+        Util_Json_AddNumberToObject(j_CaretRect, L"left", Info->rcCaret.left);
+        Util_Json_AddNumberToObject(j_CaretRect, L"top", Info->rcCaret.top);
+        Util_Json_AddNumberToObject(j_CaretRect, L"right", Info->rcCaret.right);
+        Util_Json_AddNumberToObject(j_CaretRect, L"bottom", Info->rcCaret.bottom);
+        if (j_CaretRect != NULL)
+        {
+            j_CaretRect->Release();
+        }
     }
 
     return j;

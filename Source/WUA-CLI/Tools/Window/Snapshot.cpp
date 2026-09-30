@@ -11,11 +11,13 @@ WUA_COMMAND Window_Snapshot = { Parameters, ARRAYSIZE(Parameters), &Command };
 
 static
 _Function_class_(WUA_COMMAND_FN)
-_Ret_notnull_
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 Command(VOID)
 {
-    cJSON *j, *j_Active_Window, *j_Windows, *j_Window, *j_Virtual_Screen;
+    IJsonObject *j, *j_Active_Window = NULL, *j_Window, *j_Virtual_Screen;
+    IJsonVector* j_Windows;
+    IJsonObject* j_UIA;
     HWND hWnd;
     GUITHREADINFO gti;
     POINT pt;
@@ -35,28 +37,44 @@ Command(VOID)
     }
 
     /* Get virtual screen position and size */
-    j = cJSON_CreateObject();
+    j = Util_Json_CreateObject();
     UI_GetScreenPos(&pt, &size);
-    j_Virtual_Screen = cJSON_AddObjectToObject(j, "virtual_screen");
-    cJSON_AddNumberToObject(j_Virtual_Screen, "left", pt.x);
-    cJSON_AddNumberToObject(j_Virtual_Screen, "top", pt.y);
-    cJSON_AddNumberToObject(j_Virtual_Screen, "right", pt.x + size.cx);
-    cJSON_AddNumberToObject(j_Virtual_Screen, "bottom", pt.y + size.cy);
+    j_Virtual_Screen = Util_Json_AddObjectToObject(j, L"virtual_screen");
+    Util_Json_AddNumberToObject(j_Virtual_Screen, L"left", pt.x);
+    Util_Json_AddNumberToObject(j_Virtual_Screen, L"top", pt.y);
+    Util_Json_AddNumberToObject(j_Virtual_Screen, L"right", pt.x + size.cx);
+    Util_Json_AddNumberToObject(j_Virtual_Screen, L"bottom", pt.y + size.cy);
+    if (j_Virtual_Screen != NULL)
+    {
+        j_Virtual_Screen->Release();
+    }
 
     /* Get foreground windows information */
     gti.cbSize = sizeof(gti);
     if (GetGUIThreadInfo(0, &gti) && gti.hwndActive != NULL && IsTopLevelWindow(gti.hwndActive))
     {
         j_Active_Window = Util_Window_GetGUIInfoJson(&gti, HWND_DESKTOP);
-        cJSON_AddItemToObject(j_Active_Window, "uia_tree", Util_UIA_GetWindowElementJson(gti.hwndActive));
+        j_UIA = Util_UIA_GetWindowElementJson(gti.hwndActive);
+        if (j_UIA != NULL)
+        {
+            Util_Json_AddItemToObject(j_Active_Window, L"uia_tree", j_UIA);
+            j_UIA->Release();
+        } else
+        {
+            Util_Json_AddNullToObject(j_Active_Window, L"uia_tree");
+        }
+    }
+    if (j_Active_Window != NULL)
+    {
+        Util_Json_AddItemToObject(j, L"active_window", j_Active_Window);
+        j_Active_Window->Release();
     } else
     {
-        j_Active_Window = cJSON_CreateNull();
+        Util_Json_AddNullToObject(j, L"active_window");
     }
-    cJSON_AddItemToObject(j, "active_window", j_Active_Window);
 
     /* Enumerate top-level windows */
-    j_Windows = cJSON_CreateArray();
+    j_Windows = Util_Json_CreateArray();
     hWnd = GetWindow(GetDesktopWindow(), GW_CHILD);
     while (hWnd != NULL)
     {
@@ -74,12 +92,17 @@ Command(VOID)
             j_Window = Util_Window_GetInfoJson(hWnd);
             if (j_Window != NULL)
             {
-                cJSON_AddItemToArray(j_Windows, j_Window);
+                Util_Json_AddItemToArray(j_Windows, j_Window);
+                j_Window->Release();
             }
         }
         hWnd = GetWindow(hWnd, GW_HWNDNEXT);
     }
-    cJSON_AddItemToObject(j, "windows", j_Windows);
+    Util_Json_AddItemToObject(j, L"windows", j_Windows);
+    if (j_Windows != NULL)
+    {
+        j_Windows->Release();
+    }
 
     return BuildSuccessOutput(j);
 }

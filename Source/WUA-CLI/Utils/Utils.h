@@ -6,7 +6,7 @@
 
 _Success_(return == NULL)
 _Ret_maybenull_
-cJSON*
+IJsonObject*
 Util_Gdip_Startup(VOID);
 
 VOID
@@ -14,7 +14,7 @@ Util_Gdip_Shutdown(VOID);
 
 _Success_(return == NULL)
 _Ret_maybenull_
-cJSON*
+IJsonObject*
 Util_Gdip_SaveSnapshot(
     _In_opt_ HWND hWnd,
     _In_ PCWSTR pszFile);
@@ -86,12 +86,12 @@ Util_Window_Uncloake(
 
 _Success_(return != NULL)
 _Ret_maybenull_
-cJSON*
+IJsonObject*
 Util_Window_GetInfoJson(
     _In_ HWND hWnd);
 
-_Ret_notnull_
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 Util_Window_GetGUIInfoJson(
     _In_ PGUITHREADINFO Info,
     _In_opt_ HWND CaretMapWindow);
@@ -109,57 +109,112 @@ Util_UIA_GetText(
     _Out_writes_(BufferCch) PSTR Buffer,
     _In_ ULONG BufferCch);
 
-_Ret_notnull_
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 Util_UIA_GetInfoJson(
     _In_ IUIAutomationElement * Element);
 
-_Ret_notnull_
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 Util_UIA_GetWindowElementJson(
     _In_ HWND hWnd);
 
 #pragma region Json.cpp
 
+HRESULT
+Util_Json_Initialize(VOID);
+
+VOID
+Util_Json_Shutdown(VOID);
+
+HRESULT
+Util_Json_Write(
+    _In_opt_ IUnknown* Value,
+    _In_ HANDLE File);
+
+// Create functions and AddObjectToObject return owned references; other JSON inputs are borrowed.
+// NULL JSON inputs are only propagated after a recorded construction failure.
+_Ret_maybenull_
+IJsonObject*
+Util_Json_CreateObject(VOID);
+
+_Ret_maybenull_
+IJsonVector*
+Util_Json_CreateArray(VOID);
+
+VOID
+Util_Json_AddItemToObject(
+    _In_opt_ IJsonObject* Object,
+    _In_ PCWSTR Key,
+    _In_opt_ IUnknown* Value);
+
+VOID
+Util_Json_AddItemToArray(
+    _In_opt_ IJsonVector* Array,
+    _In_opt_ IUnknown* Value);
+
+ULONG
+Util_Json_GetArraySize(
+    _In_opt_ IJsonVector* Array);
+
+_Ret_maybenull_
+IJsonObject*
+Util_Json_AddObjectToObject(
+    _In_opt_ IJsonObject* Object,
+    _In_ PCWSTR Key);
+
+VOID
+Util_Json_AddNullToObject(
+    _In_opt_ IJsonObject* Object,
+    _In_ PCWSTR Key);
+
+VOID
+Util_Json_AddStringToObject(
+    _In_opt_ IJsonObject* Object,
+    _In_ PCWSTR Key,
+    _In_ PCSTR Value);
+
+VOID
+Util_Json_AddBoolToObject(
+    _In_opt_ IJsonObject* Object,
+    _In_ PCWSTR Key,
+    _In_ LOGICAL Value);
+
+VOID
+Util_Json_AddNumberToObject(
+    _In_opt_ IJsonObject* Object,
+    _In_ PCWSTR Key,
+    _In_ DOUBLE Value);
+
 FORCEINLINE
-_Ret_notnull_
-cJSON*
+VOID
 Util_Json_AddWindowHandle(
-    _In_ cJSON * j,
-    _In_ PCSTR Key,
+    _In_opt_ IJsonObject* j,
+    _In_ PCWSTR Key,
     _In_opt_ HWND hWnd)
 {
     CHAR sz[32];
     if (hWnd != NULL && Util_Window_GetHandleString(hWnd, sz, ARRAYSIZE(sz)) > 0)
     {
-        return cJSON_AddStringToObject(j, Key, sz);
+        Util_Json_AddStringToObject(j, Key, sz);
     } else
     {
-        return cJSON_AddNullToObject(j, Key);
+        Util_Json_AddNullToObject(j, Key);
     }
 }
 
-_Ret_notnull_
-cJSON*
+VOID
 Util_Json_AddUnicodeString(
-    _In_ cJSON * j,
-    _In_ PCSTR Key,
-    _In_reads_opt_(Length + 1) PCWSTR String,
+    _In_opt_ IJsonObject* j,
+    _In_ PCWSTR Key,
+    _When_(Length == 0, _In_opt_z_) _When_(Length != 0, _In_reads_(Length)) PCWSTR String,
     _In_opt_ ULONG Length);
 
-_Ret_notnull_
-cJSON*
+VOID
 Util_Json_AddBstr(
-    _In_ cJSON * j,
-    _In_ PCSTR Key,
+    _In_opt_ IJsonObject* j,
+    _In_ PCWSTR Key,
     _In_opt_ BSTR Value);
-
-_Ret_maybenull_
-cJSON*
-Util_Json_AddVariant(
-    _In_ cJSON* j,
-    _In_ PCSTR Key,
-    _In_ LPVARIANT Value);
 
 #pragma endregion
 

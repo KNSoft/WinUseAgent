@@ -168,108 +168,116 @@ Util_UIA_GetText(
     return 0;
 }
 
-_Ret_notnull_
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 Util_UIA_GetInfoJson(
     _In_ IUIAutomationElement * Element)
 {
-    cJSON *j;
+    IJsonObject* j;
     UIA_HWND uiaHwnd;
     BSTR bstr;
     RECT Rect;
     POINT pt;
     BOOL b;
 
-    j = cJSON_CreateObject();
+    j = Util_Json_CreateObject();
 
     if (SUCCEEDED(Element->get_CurrentNativeWindowHandle(&uiaHwnd)))
     {
-        Util_Json_AddWindowHandle(j, "window_handle", reinterpret_cast<HWND>(uiaHwnd));
+        Util_Json_AddWindowHandle(j, L"window_handle", reinterpret_cast<HWND>(uiaHwnd));
     }
 
     if (SUCCEEDED(Element->get_CurrentName(&bstr)))
     {
-        Util_Json_AddBstr(j, "name", bstr);
+        Util_Json_AddBstr(j, L"name", bstr);
         SysFreeString(bstr);
     } else
     {
-        cJSON_AddNullToObject(j, "name");
+        Util_Json_AddNullToObject(j, L"name");
     }
 
     if (SUCCEEDED(Element->get_CurrentLocalizedControlType(&bstr)))
     {
-        Util_Json_AddBstr(j, "role", bstr);
+        Util_Json_AddBstr(j, L"role", bstr);
         SysFreeString(bstr);
     }
 
     CHAR sz[2048];
     if (Util_UIA_GetText(Element, sz, ARRAYSIZE(sz)) > 0)
     {
-        cJSON_AddStringToObject(j, "text", sz);
+        Util_Json_AddStringToObject(j, L"text", sz);
     }
 
     if (SUCCEEDED(Element->get_CurrentBoundingRectangle(&Rect)))
     {
-        cJSON_AddNumberToObject(j, "left", Rect.left);
-        cJSON_AddNumberToObject(j, "top", Rect.top);
-        cJSON_AddNumberToObject(j, "right", Rect.right);
-        cJSON_AddNumberToObject(j, "bottom", Rect.bottom);
+        Util_Json_AddNumberToObject(j, L"left", Rect.left);
+        Util_Json_AddNumberToObject(j, L"top", Rect.top);
+        Util_Json_AddNumberToObject(j, L"right", Rect.right);
+        Util_Json_AddNumberToObject(j, L"bottom", Rect.bottom);
     }
 
     if (SUCCEEDED(Element->GetClickablePoint(&pt, &b)) && b)
     {
-        cJSON* j_ClickablePoint = cJSON_CreateObject();
-        cJSON_AddNumberToObject(j_ClickablePoint, "x", pt.x);
-        cJSON_AddNumberToObject(j_ClickablePoint, "y", pt.y);
-        cJSON_AddItemToObject(j, "clickable_point", j_ClickablePoint);
+        IJsonObject* j_ClickablePoint = Util_Json_CreateObject();
+        Util_Json_AddNumberToObject(j_ClickablePoint, L"x", pt.x);
+        Util_Json_AddNumberToObject(j_ClickablePoint, L"y", pt.y);
+        Util_Json_AddItemToObject(j, L"clickable_point", j_ClickablePoint);
+        if (j_ClickablePoint != NULL)
+        {
+            j_ClickablePoint->Release();
+        }
     }
 
     if (SUCCEEDED(Element->get_CurrentIsEnabled(&b)))
     {
-        cJSON_AddBoolToObject(j, "enabled", b);
+        Util_Json_AddBoolToObject(j, L"enabled", b);
     }
     if (SUCCEEDED(Element->get_CurrentIsOffscreen(&b)))
     {
-        cJSON_AddBoolToObject(j, "offscreen", b);
+        Util_Json_AddBoolToObject(j, L"offscreen", b);
     }
     if (SUCCEEDED(Element->get_CurrentHasKeyboardFocus(&b)))
     {
-        cJSON_AddBoolToObject(j, "focused", b);
+        Util_Json_AddBoolToObject(j, L"focused", b);
     }
 
     return j;
 }
 
 static
-_Ret_maybenull_
-cJSON*
+VOID
 AppendChildrenInfoJson(
-    _In_ cJSON * j,
-    _In_ PCSTR Key,
+    _In_opt_ IJsonObject* j,
+    _In_ PCWSTR Key,
     _In_ IUIAutomationTreeWalker * Walker,
     _In_ IUIAutomationElement * Element,
     _In_ ULONG Depth)
 {
-    IUIAutomationElement *Child, *NextChild;
-    cJSON *jChildren, *jChild;
+    IUIAutomationElement *Child = NULL, *NextChild = NULL;
+    IJsonVector* jChildren;
+    IJsonObject* jChild;
     ULONG ChildCount;
 
     if (Depth >= WUA_UIA_MAX_DEPTH)
     {
-        return NULL;
+        return;
     }
     if (FAILED(Walker->GetFirstChildElement(Element, &Child)) || Child == NULL)
     {
-        return NULL;
+        return;
     }
 
-    jChildren = cJSON_CreateArray();
+    jChildren = Util_Json_CreateArray();
     ChildCount = 0;
     do
     {
         jChild = Util_UIA_GetInfoJson(Child);
         AppendChildrenInfoJson(jChild, Key, Walker, Child, Depth + 1);
-        cJSON_AddItemToArray(jChildren, jChild);
+        Util_Json_AddItemToArray(jChildren, jChild);
+        if (jChild != NULL)
+        {
+            jChild->Release();
+        }
         ChildCount++;
         if (ChildCount >= WUA_UIA_MAX_CHILDREN)
         {
@@ -282,20 +290,18 @@ AppendChildrenInfoJson(
         Child = NextChild;
     } while (Child != NULL);
 
-    if (cJSON_GetArraySize(jChildren) > 0)
+    if (Util_Json_GetArraySize(jChildren) > 0)
     {
-        cJSON_AddItemToObject(j, Key, jChildren);
-    } else
-    {
-        cJSON_Delete(jChildren);
-        jChildren = NULL;
+        Util_Json_AddItemToObject(j, Key, jChildren);
     }
-
-    return jChildren;
+    if (jChildren != NULL)
+    {
+        jChildren->Release();
+    }
 }
 
-_Ret_notnull_
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 Util_UIA_GetWindowElementJson(
     _In_ HWND hWnd)
 {
@@ -303,9 +309,8 @@ Util_UIA_GetWindowElementJson(
     IUIAutomation* UIA;
     IUIAutomationElement* Element;
     IUIAutomationTreeWalker* Walker;
-    cJSON* j;
+    IJsonObject* j = NULL;
 
-    j = NULL;
     Hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if ((SUCCEEDED(Hr) || Hr == RPC_E_CHANGED_MODE) &&
         (UIA = Util_UIA_CreateInstance()) != NULL)
@@ -315,7 +320,7 @@ Util_UIA_GetWindowElementJson(
             if (SUCCEEDED(UIA->get_ControlViewWalker(&Walker)))
             {
                 j = Util_UIA_GetInfoJson(Element);
-                AppendChildrenInfoJson(j, "children", Walker, Element, 0);
+                AppendChildrenInfoJson(j, L"children", Walker, Element, 0);
                 Walker->Release();
             }
             Element->Release();
@@ -326,5 +331,5 @@ Util_UIA_GetWindowElementJson(
     {
         CoUninitialize();
     }
-    return j != NULL ? j : cJSON_CreateNull();
+    return j;
 }

@@ -13,7 +13,8 @@
 #pragma comment(lib, "uiautomationcore.lib")
 #pragma comment(lib, "Version.lib")
 
-#include "../3rdParty/cJSON/cJSON.h"
+#include <roapi.h>
+#pragma comment(lib, "runtimeobject.lib")
 
 #include "Utils/Utils.h"
 
@@ -25,8 +26,8 @@ typedef struct _WUA_KV
 
 typedef
 _Function_class_(WUA_COMMAND_FN)
-_Ret_notnull_
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 WUA_COMMAND_FN(VOID);
 
 typedef enum
@@ -60,15 +61,18 @@ typedef struct _WUA_COMMAND
     WUA_COMMAND_FN* Func;
 } WUA_COMMAND, *PWUA_COMMAND;
 
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 BuildErrorOutput(
     _In_ HRESULT Hr,
     _In_opt_ _Printf_format_string_ PCSTR DetailsFormat,
     ...);
 
-cJSON*
+// Consumes Result, including on failure; returns an owned reference.
+_Ret_maybenull_
+IJsonObject*
 BuildSuccessOutput(
-    _In_opt_ cJSON* Result);
+    _In_opt_ IUnknown* Result);
 
 _Ret_maybenull_
 PWSTR

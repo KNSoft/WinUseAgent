@@ -4,7 +4,7 @@ static ULONG_PTR StartupCookie;
 
 _Success_(return == NULL)
 _Ret_maybenull_
-cJSON*
+IJsonObject*
 Util_Gdip_Startup(VOID)
 {
     Gdiplus::Status Status;
@@ -26,12 +26,12 @@ Util_Gdip_Shutdown(VOID)
 
 _Success_(return == NULL)
 _Ret_maybenull_
-cJSON*
+IJsonObject*
 Util_Gdip_SaveSnapshot(
     _In_opt_ HWND hWnd,
     _In_ PCWSTR pszFile)
 {
-    cJSON *j;
+    IJsonObject* j;
     UI_SNAPSHOT Snapshot;
     Gdiplus::Status Status;
     Gdiplus::Bitmap* Bitmap;

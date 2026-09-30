@@ -1,100 +1,276 @@
 ﻿#include "pch.h"
 
-_Ret_notnull_
-cJSON*
-Util_Json_AddUnicodeString(
-    _In_ cJSON* j,
-    _In_ PCSTR Key,
-    _In_reads_opt_(Length + 1) PCWSTR String,
-    _In_opt_ ULONG Length)
+static IJsonValueStatics* JsonFactory = NULL;
+static IJsonValueStatics2* JsonFactory2 = NULL;
+static HRESULT JsonStatus = CO_E_NOTINITIALIZED;
+
+static
+HRESULT
+Json_RecordResult(
+    _In_ HRESULT Hr)
 {
-    UNICODE_STRING UnicodeString;
-    UTF8_STRING UTF8String;
-    cJSON* jRet;
-
-    if (String == NULL)
+    if (FAILED(Hr) && SUCCEEDED(JsonStatus))
     {
-        return cJSON_AddNullToObject(j, Key);
+        JsonStatus = Hr;
     }
-    if (Length == 0)
-    {
-        Length = (ULONG)wcslen(String);
-    }
-
-    UnicodeString.Buffer = const_cast<PWSTR>(String);
-    UnicodeString.Length = (USHORT)(Length + 1) * sizeof(WCHAR);
-    UnicodeString.MaximumLength = UnicodeString.Length;
-    if (NT_SUCCESS(RtlUnicodeStringToUTF8String(&UTF8String, &UnicodeString, TRUE)))
-    {
-        jRet = cJSON_AddStringToObject(j, Key, UTF8String.Buffer);
-        RtlFreeUTF8String(&UTF8String);
-    } else
-    {
-        jRet = cJSON_AddNullToObject(j, Key);
-    }
-    return jRet;
+    return Hr;
 }
 
-_Ret_notnull_
-cJSON*
-Util_Json_AddBstr(
-    _In_ cJSON* j,
-    _In_ PCSTR Key,
-    _In_opt_ BSTR Value)
+HRESULT
+Util_Json_Initialize(VOID)
 {
-    if (Value != NULL)
+    Util_Json_Shutdown();
+    JsonStatus = S_OK;
+    if (SUCCEEDED(Json_RecordResult(Data_JsonGetValueFactory(&JsonFactory))))
     {
-        return Util_Json_AddUnicodeString(j, Key, Value, SysStringLen(Value));
-    } else
-    {
-        return cJSON_AddNullToObject(j, Key);
+        Json_RecordResult(JsonFactory->QueryInterface(IID_IJsonValueStatics2, (PVOID*)&JsonFactory2));
     }
+    return JsonStatus;
+}
+
+VOID
+Util_Json_Shutdown(VOID)
+{
+    if (JsonFactory2 != NULL)
+    {
+        JsonFactory2->Release();
+        JsonFactory2 = NULL;
+    }
+    if (JsonFactory != NULL)
+    {
+        JsonFactory->Release();
+        JsonFactory = NULL;
+    }
+    JsonStatus = CO_E_NOTINITIALIZED;
+}
+
+HRESULT
+Util_Json_Write(
+    _In_opt_ IUnknown* Value,
+    _In_ HANDLE File)
+{
+    IJsonValue* JsonValue;
+    PSTR Text;
+    ULONG Length, Written, Offset;
+    NTSTATUS Status;
+    HRESULT Hr;
+
+    if (FAILED(JsonStatus))
+    {
+        return JsonStatus;
+    }
+    Hr = Value->QueryInterface(IID_IJsonValue, (PVOID*)&JsonValue);
+    if (FAILED(Hr))
+    {
+        return Json_RecordResult(Hr);
+    }
+    Hr = Data_JsonStringifyUtf8(JsonValue, &Text, &Length);
+    JsonValue->Release();
+    if (SUCCEEDED(Hr))
+    {
+        Offset = 0;
+        while (Offset < Length)
+        {
+            Status = IO_WriteFile(File, NULL, Text + Offset, Length - Offset, &Written);
+            if (!NT_SUCCESS(Status))
+            {
+                Hr = HRESULT_FROM_NT(Status);
+                break;
+            }
+            if (Written == 0 || Written > Length - Offset)
+            {
+                Hr = HRESULT_FROM_WIN32(ERROR_WRITE_FAULT);
+                break;
+            }
+            Offset += Written;
+        }
+        Mem_Free(Text);
+    }
+    return Json_RecordResult(Hr);
 }
 
 _Ret_maybenull_
-cJSON*
-Util_Json_AddVariant(
-    _In_ cJSON* j,
-    _In_ PCSTR Key,
-    _In_ LPVARIANT Value)
+IJsonObject*
+Util_Json_CreateObject(VOID)
 {
-    if (Value->vt == VT_BSTR)
-    {
-        return Util_Json_AddBstr(j, Key, Value->bstrVal);
-    } else if (Value->vt == VT_BOOL)
-    {
-        return cJSON_AddBoolToObject(j, Key, !!Value->boolVal);
-    } else if (Value->vt == VT_I1)
-    {
-        return cJSON_AddNumberToObject(j, Key, Value->bVal);
-    } else if (Value->vt == VT_I2)
-    {
-        return cJSON_AddNumberToObject(j, Key, Value->iVal);
-    } else if (Value->vt == VT_I4)
-    {
-        return cJSON_AddNumberToObject(j, Key, Value->lVal);
-    } else if (Value->vt == VT_INT)
-    {
-        return cJSON_AddNumberToObject(j, Key, Value->intVal);
-    } else if (Value->vt == VT_R4)
-    {
-        return cJSON_AddNumberToObject(j, Key, Value->fltVal);
-    } else if (Value->vt == VT_R8)
-    {
-        return cJSON_AddNumberToObject(j, Key, Value->dblVal);
-    } else if (Value->vt == VT_UI1)
-    {
-        return cJSON_AddNumberToObject(j, Key, Value->bVal);
-    } else if (Value->vt == VT_UI2)
-    {
-        return cJSON_AddNumberToObject(j, Key, Value->uiVal);
-    } else if (Value->vt == VT_UI4)
-    {
-        return cJSON_AddNumberToObject(j, Key, Value->ulVal);
-    } else if (Value->vt == VT_UINT)
-    {
-        return cJSON_AddNumberToObject(j, Key, Value->uintVal);
-    }
+    IJsonObject* Object = NULL;
 
-    return NULL;
+    if (SUCCEEDED(JsonStatus))
+    {
+        Json_RecordResult(Data_JsonCreateObject(&Object));
+    }
+    return Object;
+}
+
+_Ret_maybenull_
+IJsonVector*
+Util_Json_CreateArray(VOID)
+{
+    IJsonVector* Array = NULL;
+
+    if (SUCCEEDED(JsonStatus))
+    {
+        Json_RecordResult(Data_JsonCreateArray(&Array));
+    }
+    return Array;
+}
+
+VOID
+Util_Json_AddItemToObject(
+    _In_opt_ IJsonObject* Object,
+    _In_ PCWSTR Key,
+    _In_opt_ IUnknown* Value)
+{
+    IJsonValue* JsonValue;
+
+    if (SUCCEEDED(JsonStatus))
+    {
+        if (SUCCEEDED(Json_RecordResult(Value->QueryInterface(IID_IJsonValue, (PVOID*)&JsonValue))))
+        {
+            Json_RecordResult(Data_JsonObjectSetValue(Object, Key, JsonValue));
+            JsonValue->Release();
+        }
+    }
+}
+
+VOID
+Util_Json_AddItemToArray(
+    _In_opt_ IJsonVector* Array,
+    _In_opt_ IUnknown* Value)
+{
+    IJsonValue* JsonValue;
+
+    if (SUCCEEDED(JsonStatus))
+    {
+        if (SUCCEEDED(Json_RecordResult(Value->QueryInterface(IID_IJsonValue, (PVOID*)&JsonValue))))
+        {
+            Json_RecordResult(Array->Append(JsonValue));
+            JsonValue->Release();
+        }
+    }
+}
+
+ULONG
+Util_Json_GetArraySize(
+    _In_opt_ IJsonVector* Array)
+{
+    UINT32 Size = 0;
+
+    if (SUCCEEDED(JsonStatus))
+    {
+        Json_RecordResult(Array->get_Size(&Size));
+    }
+    return Size;
+}
+
+_Ret_maybenull_
+IJsonObject*
+Util_Json_AddObjectToObject(
+    _In_opt_ IJsonObject* Object,
+    _In_ PCWSTR Key)
+{
+    IJsonObject* Value = Util_Json_CreateObject();
+
+    Util_Json_AddItemToObject(Object, Key, Value);
+    if (FAILED(JsonStatus) && Value != NULL)
+    {
+        Value->Release();
+        Value = NULL;
+    }
+    return Value;
+}
+
+VOID
+Util_Json_AddNullToObject(
+    _In_opt_ IJsonObject* Object,
+    _In_ PCWSTR Key)
+{
+    if (SUCCEEDED(JsonStatus))
+    {
+        Json_RecordResult(Data_JsonObjectSetNull(JsonFactory2, Object, Key));
+    }
+}
+
+VOID
+Util_Json_AddStringToObject(
+    _In_opt_ IJsonObject* Object,
+    _In_ PCWSTR Key,
+    _In_ PCSTR Value)
+{
+    SIZE_T Length;
+
+    if (FAILED(JsonStatus))
+    {
+        return;
+    }
+    Length = strlen(Value);
+    Json_RecordResult(Length <= MAXULONG ?
+                      Data_JsonObjectSetStringUtf8(JsonFactory, Object, Key, Value, (ULONG)Length) : E_INVALIDARG);
+}
+
+VOID
+Util_Json_AddBoolToObject(
+    _In_opt_ IJsonObject* Object,
+    _In_ PCWSTR Key,
+    _In_ LOGICAL Value)
+{
+    if (SUCCEEDED(JsonStatus))
+    {
+        Json_RecordResult(Data_JsonObjectSetBoolean(JsonFactory, Object, Key, Value));
+    }
+}
+
+VOID
+Util_Json_AddNumberToObject(
+    _In_opt_ IJsonObject* Object,
+    _In_ PCWSTR Key,
+    _In_ DOUBLE Value)
+{
+    if (SUCCEEDED(JsonStatus))
+    {
+        Json_RecordResult(Data_JsonObjectSetNumber(JsonFactory, Object, Key, Value));
+    }
+}
+
+VOID
+Util_Json_AddUnicodeString(
+    _In_opt_ IJsonObject* j,
+    _In_ PCWSTR Key,
+    _When_(Length == 0, _In_opt_z_) _When_(Length != 0, _In_reads_(Length)) PCWSTR String,
+    _In_opt_ ULONG Length)
+{
+    if (FAILED(JsonStatus))
+    {
+        return;
+    }
+    if (String == NULL)
+    {
+        Util_Json_AddNullToObject(j, Key);
+        return;
+    }
+    if (Length == 0)
+    {
+        SIZE_T StringLength = wcslen(String);
+        if (StringLength > MAXULONG)
+        {
+            Json_RecordResult(E_INVALIDARG);
+            return;
+        }
+        Length = (ULONG)StringLength;
+    }
+    Json_RecordResult(Data_JsonObjectSetString(JsonFactory, j, Key, String, Length));
+}
+
+VOID
+Util_Json_AddBstr(
+    _In_opt_ IJsonObject* j,
+    _In_ PCWSTR Key,
+    _In_opt_ BSTR Value)
+{
+    if (SUCCEEDED(JsonStatus))
+    {
+        Json_RecordResult(Value != NULL ?
+                          Data_JsonObjectSetString(JsonFactory, j, Key, Value, SysStringLen(Value)) :
+                          Data_JsonObjectSetNull(JsonFactory2, j, Key));
+    }
 }

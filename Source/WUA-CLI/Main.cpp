@@ -104,7 +104,8 @@ static WUA_KV Tools[] = {
     DEF_TOOL(Window),
 };
 
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 BuildErrorOutput(
     _In_ HRESULT Hr,
     _In_opt_ _Printf_format_string_ PCSTR DetailsFormat,
@@ -112,20 +113,20 @@ BuildErrorOutput(
 {
     CHAR szText[300];
     ULONG uCchText;
-    cJSON *j;
+    IJsonObject* j;
     PCWSTR pszHr;
 
-    j = cJSON_CreateObject();
+    j = Util_Json_CreateObject();
 
-    cJSON_AddBoolToObject(j, "ok", FALSE);
-    cJSON_AddNumberToObject(j, "hresult", Hr);
+    Util_Json_AddBoolToObject(j, L"ok", FALSE);
+    Util_Json_AddNumberToObject(j, L"hresult", Hr);
     pszHr = Err_GetHrInfo(Hr);
     if (pszHr != NULL && Str_W2U(szText, pszHr) > 0)
     {
-        cJSON_AddStringToObject(j, "hresult_text", szText);
+        Util_Json_AddStringToObject(j, L"hresult_text", szText);
     } else
     {
-        cJSON_AddNullToObject(j, "hresult_text");
+        Util_Json_AddNullToObject(j, L"hresult_text");
     }
     if (DetailsFormat != NULL)
     {
@@ -135,28 +136,30 @@ BuildErrorOutput(
         va_end(ArgList);
         if (uCchText > 0)
         {
-            cJSON_AddStringToObject(j, "details", szText);
+            Util_Json_AddStringToObject(j, L"details", szText);
             goto _Exit;
         }
     }
-    cJSON_AddNullToObject(j, "details");
+    Util_Json_AddNullToObject(j, L"details");
 
 _Exit:
     return j;
 }
 
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 BuildSuccessOutput(
-    _In_opt_ cJSON* Result)
+    _In_opt_ IUnknown* Result)
 {
-    cJSON* j = cJSON_CreateObject();
-    cJSON_AddBoolToObject(j, "ok", TRUE);
+    IJsonObject* j = Util_Json_CreateObject();
+    Util_Json_AddBoolToObject(j, L"ok", TRUE);
     if (Result != NULL)
     {
-        cJSON_AddItemToObject(j, "result", Result);
+        Util_Json_AddItemToObject(j, L"result", Result);
+        Result->Release();
     } else
     {
-        cJSON_AddNullToObject(j, "result");
+        Util_Json_AddNullToObject(j, L"result");
     }
     return j;
 }
@@ -490,17 +493,36 @@ wmain(
     _In_ int argc,
     _In_reads_(argc) _Pre_z_ wchar_t** argv)
 {
-    cJSON* j;
+    IJsonObject* j;
     BOOL CPSet;
     UINT OriginalCP;
     PCWSTR InvalidParameter;
-    PWUA_COMMAND Command;
-    NTSTATUS Status;
+    PWUA_COMMAND Command = NULL;
+    HRESULT Hr;
+
+    if (argc >= 3)
+    {
+        FindCommand(argv[1], argv[2], &Command);
+    }
+    // Shell and clipboard commands require an STA; UIA uses the MTA.
+    Hr = RoInitialize(Command == &Window_Snapshot || Command == &Window_Inspect ?
+                      RO_INIT_MULTITHREADED : RO_INIT_SINGLETHREADED);
+    if (FAILED(Hr))
+    {
+        return Hr;
+    }
+    Hr = Util_Json_Initialize();
+    if (FAILED(Hr))
+    {
+        Util_Json_Shutdown();
+        RoUninitialize();
+        return Hr;
+    }
 
     OriginalCP = GetConsoleOutputCP();
     CPSet = SetConsoleOutputCP(CP_UTF8);
 
-    if (argc >= 3 && FindCommand(argv[1], argv[2], &Command))
+    if (Command != NULL)
     {
         InvalidParameter = InitCommandParameters(Command, argc - 3, argv + 3);
         if (InvalidParameter == NULL)
@@ -518,24 +540,17 @@ wmain(
         j = BuildErrorOutput(E_INVALIDARG, "Invalid parameters, see README.md for more information.");
     }
 
-    PSTR JsonText = cJSON_Print(j);
-    if (JsonText != NULL)
+    Hr = Util_Json_Write(j, _Inline_GetStdHandle(STD_OUTPUT_HANDLE));
+    if (j != NULL)
     {
-        Status = IO_WriteFile(_Inline_GetStdHandle(STD_OUTPUT_HANDLE),
-                              NULL,
-                              JsonText,
-                              (ULONG)strlen(JsonText),
-                              NULL);
-        cJSON_free(JsonText);
-        cJSON_Delete(j);
-    } else
-    {
-        Status = STATUS_NO_MEMORY;
+        j->Release();
     }
+    Util_Json_Shutdown();
+    RoUninitialize();
 
     if (CPSet)
     {
         SetConsoleOutputCP(OriginalCP);
     }
-    return NT_SUCCESS(Status) ? 0 : Status;
+    return SUCCEEDED(Hr) ? 0 : Hr;
 }

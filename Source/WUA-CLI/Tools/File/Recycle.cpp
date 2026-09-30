@@ -11,8 +11,8 @@ WUA_COMMAND File_Recycle = { Parameters, ARRAYSIZE(Parameters), &Command };
 
 static
 _Function_class_(WUA_COMMAND_FN)
-_Ret_notnull_
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 Command(VOID)
 {
     SIZE_T cchFile;

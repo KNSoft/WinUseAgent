@@ -11,11 +11,11 @@ WUA_COMMAND Run_Locate = { Parameters, ARRAYSIZE(Parameters), &Command };
 
 static
 _Function_class_(WUA_COMMAND_FN)
-_Ret_notnull_
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 Command(VOID)
 {
-    cJSON* j;
+    IJsonObject* j;
     HRESULT Hr;
 
     if (Path == NULL || *Path == UNICODE_NULL)

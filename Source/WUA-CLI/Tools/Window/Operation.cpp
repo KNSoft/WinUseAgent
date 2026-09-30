@@ -13,8 +13,8 @@ WUA_COMMAND Window_Operation = { Parameters, ARRAYSIZE(Parameters), &Command };
 
 static
 _Function_class_(WUA_COMMAND_FN)
-_Ret_notnull_
-cJSON*
+_Ret_maybenull_
+IJsonObject*
 Command(VOID)
 {
     HWND hWnd = reinterpret_cast<HWND>(UI_32ToHandle(Handle));
