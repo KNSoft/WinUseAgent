@@ -74,8 +74,8 @@ IJsonObject*
 BuildSuccessOutput(
     _In_opt_ IUnknown* Result);
 
-_Ret_maybenull_
-PWSTR
+NTSTATUS
 BuildCommandLineWithProgram(
     _In_ PCWSTR Program,
-    _In_opt_ PCWSTR Arguments);
+    _In_opt_ PCWSTR Arguments,
+    _Outptr_result_z_ PWSTR* CommandLine);

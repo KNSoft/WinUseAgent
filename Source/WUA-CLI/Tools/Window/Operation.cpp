@@ -1,11 +1,11 @@
 ﻿#include "pch.h"
 
 static ULONG Handle;
-static PWSTR Verb;
+static PWSTR Action;
 
 static WUA_COMMAND_PARAMETER Parameters[] = {
     DEF_PARAMETER_ENTRY(Handle, HexU32, TRUE),
-    DEF_PARAMETER_ENTRY(Verb, String, TRUE),
+    DEF_PARAMETER_ENTRY(Action, String, TRUE),
 };
 
 WUA_COMMAND_FN Command;
@@ -24,7 +24,7 @@ Command(VOID)
     }
     _Analysis_assume_(hWnd != NULL);
 
-    if (_wcsicmp(Verb, L"Active") == 0)
+    if (_wcsicmp(Action, L"Activate") == 0)
     {
         ShowWindow(hWnd, SW_RESTORE);
         if (Util_Window_IsCloaked(hWnd))
@@ -36,16 +36,16 @@ Command(VOID)
         {
             return BuildErrorOutput(E_FAIL, "Failed to activate the window.");
         }
-    } else if (_wcsicmp(Verb, L"Minimize") == 0)
+    } else if (_wcsicmp(Action, L"Minimize") == 0)
     {
         ShowWindow(hWnd, SW_MINIMIZE);
-    } else if (_wcsicmp(Verb, L"Maximize") == 0)
+    } else if (_wcsicmp(Action, L"Maximize") == 0)
     {
         ShowWindow(hWnd, SW_MAXIMIZE);
         Util_Window_Active(hWnd);
     } else
     {
-        return BuildErrorOutput(E_INVALIDARG, "Parameter \"Verb\" is invalid.");
+        return BuildErrorOutput(E_INVALIDARG, "Parameter \"Action\" is invalid.");
     }
     return BuildSuccessOutput(NULL);
 }

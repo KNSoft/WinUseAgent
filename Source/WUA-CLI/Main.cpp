@@ -164,105 +164,53 @@ BuildSuccessOutput(
     return j;
 }
 
-static
-SIZE_T
-GetQuotedArgCch(
-    _In_ PCWSTR Arg)
-{
-    SIZE_T cch, BackslashCount;
-
-    cch = 2;
-    BackslashCount = 0;
-    for (PCWSTR p = Arg; *p != UNICODE_NULL; p++)
-    {
-        if (*p == L'\\')
-        {
-            BackslashCount++;
-        } else if (*p == L'"')
-        {
-            cch += BackslashCount + 2;
-            BackslashCount = 0;
-        } else
-        {
-            BackslashCount = 0;
-        }
-        cch++;
-    }
-    cch += BackslashCount;
-    return cch;
-}
-
-static
-PWSTR
-AppendQuotedArg(
-    _In_ PWSTR Dst,
-    _In_ PCWSTR Arg)
-{
-    SIZE_T BackslashCount;
-
-    *Dst++ = L'"';
-    BackslashCount = 0;
-    for (PCWSTR p = Arg; *p != UNICODE_NULL; p++)
-    {
-        if (*p == L'\\')
-        {
-            BackslashCount++;
-            *Dst++ = *p;
-        } else if (*p == L'"')
-        {
-            for (SIZE_T i = 0; i <= BackslashCount; i++)
-            {
-                *Dst++ = L'\\';
-            }
-            *Dst++ = *p;
-            BackslashCount = 0;
-        } else
-        {
-            BackslashCount = 0;
-            *Dst++ = *p;
-        }
-    }
-    for (SIZE_T i = 0; i < BackslashCount; i++)
-    {
-        *Dst++ = L'\\';
-    }
-    *Dst++ = L'"';
-    return Dst;
-}
-
-_Ret_maybenull_
-PWSTR
+NTSTATUS
 BuildCommandLineWithProgram(
     _In_ PCWSTR Program,
-    _In_opt_ PCWSTR Arguments)
+    _In_opt_ PCWSTR Arguments,
+    _Outptr_result_z_ PWSTR* CommandLine)
 {
-    SIZE_T cch;
-    PWSTR CommandLine, p;
+    PWSTR QuotedProgram, Buffer;
+    SIZE_T ProgramCch, ArgumentsCch;
+    NTSTATUS Status;
 
-    cch = GetQuotedArgCch(Program) + 1;
-    if (Arguments != NULL && *Arguments != UNICODE_NULL)
+    *CommandLine = NULL;
+    if (wcschr(Program, L'"') != NULL)
     {
-        cch++;
-        cch += wcslen(Arguments);
+        return STATUS_INVALID_PARAMETER;
+    }
+    Status = PS_ArgvToCommandLineW(1, &Program, &QuotedProgram);
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
+    if (Arguments == NULL || *Arguments == UNICODE_NULL)
+    {
+        *CommandLine = QuotedProgram;
+        return STATUS_SUCCESS;
     }
 
-    CommandLine = reinterpret_cast<PWSTR>(Mem_Alloc(cch * sizeof(WCHAR)));
-    if (CommandLine == NULL)
+    // Arguments is the raw tail after "--"; preserve its quoting and spacing.
+    ProgramCch = wcslen(QuotedProgram);
+    ArgumentsCch = wcslen(Arguments);
+    if (ProgramCch > MAXSIZE_T / sizeof(WCHAR) - 2 ||
+        ArgumentsCch > MAXSIZE_T / sizeof(WCHAR) - ProgramCch - 2)
     {
-        return NULL;
+        PS_FreeCommandLineBuffer(QuotedProgram);
+        return STATUS_INTEGER_OVERFLOW;
     }
-
-    p = AppendQuotedArg(CommandLine, Program);
-    if (Arguments != NULL && *Arguments != UNICODE_NULL)
+    Buffer = reinterpret_cast<PWSTR>(Mem_Alloc((ProgramCch + ArgumentsCch + 2) * sizeof(WCHAR)));
+    if (Buffer == NULL)
     {
-        *p++ = L' ';
-        while (*Arguments != UNICODE_NULL)
-        {
-            *p++ = *Arguments++;
-        }
+        PS_FreeCommandLineBuffer(QuotedProgram);
+        return STATUS_NO_MEMORY;
     }
-    *p = UNICODE_NULL;
-    return CommandLine;
+    RtlCopyMemory(Buffer, QuotedProgram, ProgramCch * sizeof(WCHAR));
+    Buffer[ProgramCch] = L' ';
+    RtlCopyMemory(Buffer + ProgramCch + 1, Arguments, (ArgumentsCch + 1) * sizeof(WCHAR));
+    PS_FreeCommandLineBuffer(QuotedProgram);
+    *CommandLine = Buffer;
+    return STATUS_SUCCESS;
 }
 
 static

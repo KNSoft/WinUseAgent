@@ -94,36 +94,97 @@ Applies an operation to a window.
 Parameters:
 
 - `Handle` (`HexU32`, required): window handle.
-- `Verb` (`String`, required): `Active`, `Minimize`, or `Maximize`.
+- `Action` (`String`, required): `Activate`, `Minimize`, or `Maximize`.
 
 Result: `null`
 
 Example:
 
 ```powershell
-.\WUA-CLI.exe Window Operation Handle=00123456 Verb=Active
+.\WUA-CLI.exe Window Operation Handle=00123456 Action=Activate
 ```
 
 ### `Input Mouse`
 
-Sends mouse input.
+Sends mouse input. **Two coordinate modes** — choose based on your coordinate source:
 
-Parameters:
+#### Mode 1: Virtual-Screen Coordinates (no Handle)
 
-- `Handle` (`HexU32`, optional): when present, `X` and `Y` are client coordinates for that window, or screen coordinates if absent.
-- `X` (`Int32`, required), `Y` (`Int32`, required): coordinates.
-- `Button` (`String`, required): `Left`, `Right`, `Middle`, `X1`, or `X2`.
-- `Operation` (`String`, required): `Click`, `DoubleClick`, `Down`, or `Up`.
-- Without `Handle`, `X` and `Y` are virtual-screen coordinates.
-
-Result: `null`
-
-Examples:
+Use this when clicking from a **full desktop screenshot** or when you have **UIA `clickable_point` / bounds** (they are already in screen/virtual-screen coordinates).
 
 ```powershell
-.\WUA-CLI.exe Input Mouse X=640 Y=360 Button=Left Operation=Click
-.\WUA-CLI.exe Input Mouse Handle=00123456 X=120 Y=80 Button=Left Operation=DoubleClick
+.\WUA-CLI.exe Input Mouse X=<ScreenX> Y=<ScreenY> Button=Left Operation=Click
 ```
+
+- `X`, `Y`: **Virtual-screen coordinates** (absolute, same coordinate space as `virtual_screen` from `Window Snapshot`).
+- No `Handle` parameter.
+- CLI sends input as-is; no coordinate transformation.
+
+**Conversion from screenshot image coordinates:**
+
+```text
+ScreenX = ImageX + virtual_screen.left
+ScreenY = ImageY + virtual_screen.top
+```
+
+**UIA `clickable_point` is already in this coordinate space — pass directly, no conversion needed.**
+
+Example — click a UIA element's clickable point on the desktop:
+
+```powershell
+# UIA returned clickable_point = { x: 1092, y: 1196 }
+# This is already a screen coordinate -> use Mode 1 (no Handle)
+.\WUA-CLI.exe Input Mouse X=1092 Y=1196 Button=Left Operation=Click
+```
+
+#### Mode 2: Client-Area Relative Coordinates (with Handle)
+
+Use this when your coordinates are relative to the target window's client-area origin (0,0). Both coordinate modes can operate applications without UIA; choose the mode that matches the source of your coordinates.
+
+```powershell
+.\WUA-CLI.exe Input Mouse Handle=<hex> X=<ClientX> Y=<ClientY> Button=Left Operation=Click
+```
+
+- `Handle` (`HexU32`, required): target window handle.
+- `X`, `Y`: **Client-area relative coordinates** — (0,0) is the top-left corner of the window's **client area** (inside the title bar/border). CLI internally calls `ClientToScreen()` to convert to screen coordinates before sending input.
+- CLI also activates/foregrounds the handle's window before sending input.
+
+**Do not subtract UIA window bounds to obtain client coordinates.** The UIA root rectangle can include the title bar and borders, so its origin is not necessarily the client-area origin. The window list does not expose a client-area origin.
+
+Use `ScreenToClient()` for an actual screen-to-client conversion, or subtract the screen position returned by `ClientToScreen(hwnd, {0,0})`. If you only have a screen point and need to activate the target, use `Window Operation Action=Activate`, obtain a fresh observation, and send the resulting screen point without `Handle`.
+
+Example using coordinates measured from the client-area screenshot returned by `Window Inspect`:
+
+```powershell
+.\WUA-CLI.exe Input Mouse Handle=F0844 X=120 Y=80 Button=Left Operation=Click
+```
+
+#### Shared Parameters
+
+- `Button` (`String`): required for `Click`, `DoubleClick`, `Down`, and `Up`; one of `Left`, `Right`, `Middle`, `X1`, or `X2`. Omit for `Move` and `Wheel`.
+- `Operation` (`String`, required): `Click`, `DoubleClick`, `Down`, `Up`, `Move`, or `Wheel`.
+
+- `Delta` (`Int32`, optional for `Wheel`): signed wheel delta, default `120`; must not be zero. `120` is one wheel detent. Positive values scroll up for vertical input and right for horizontal input.
+- `Axis` (`String`, optional for `Wheel`): `Vertical` (default) or `Horizontal`.
+
+```powershell
+.\WUA-CLI.exe Input Mouse X=640 Y=360 Operation=Move
+.\WUA-CLI.exe Input Mouse X=640 Y=360 Operation=Wheel Delta=-120
+.\WUA-CLI.exe Input Mouse X=640 Y=360 Operation=Wheel Axis=Horizontal Delta=120
+```
+
+Result: `null` for all operations.
+
+#### Which mode should I use?
+
+| Scenario | Mode | Why |
+|----------|------|-----|
+| Clicking from full desktop screenshot | **Mode 1 (no Handle)** | Screenshot pixels map directly to screen coords |
+| Using UIA `clickable_point` / `bounds` | **Mode 1 (no Handle)** | UIA already returns screen coords |
+| Operating a non-UIA window by pixel offset within it | **Mode 2 (with Handle)** | You measure positions relative to the window itself |
+| Target window needs activation and the point is a screen coordinate | Activate, observe again, then **Mode 1** | Preserves the screen-coordinate contract |
+
+**Common mistake:** Passing UIA `clickable_point` (screen coordinates) together with `Handle`. This causes a double-offset because CLI applies `ClientToScreen()` to an already-absolute coordinate, sending the mouse to the wrong location (often the taskbar). **If you have a screen coordinate, use Mode 1. Activate separately and observe again when needed.**
 
 ### `Input Text`
 
@@ -205,8 +266,8 @@ Result:
 - `size`: file size in bytes.
 - `bom`: detected BOM name when present.
 - `crlf`: CRLF line-ending count.
-- `lf_only`: standalone LF line-ending count.
-- `cr_only`: standalone CR line-ending count.
+- `lf_only`: standalone LF line count.
+- `cr_only`: standalone CR line count.
 - `final_line_ending`: final line ending, or `null`.
 
 Example:
@@ -221,7 +282,7 @@ Moves a file or directory to the Windows Recycle Bin.
 
 Parameters:
 
-- `File` (`String`, required): file or directory path.
+- `File` (`String`, required): file or directory.
 
 Result: `null`
 
@@ -245,9 +306,9 @@ ScreenX = ImageX + virtual_screen.left
 ScreenY = ImageY + virtual_screen.top
 ```
 
-5. Use `Input Mouse X=<ScreenX> Y=<ScreenY> ...` for virtual-screen coordinates.
-6. Use `Input Mouse Handle=<handle> X=<clientX> Y=<clientY> ...` only when coordinates are relative to that window client area.
-7. Use `Window Operation Verb=Active` before text input or when the target window needs focus.
+5. Use `Input Mouse` **Mode 1** (no Handle) with virtual-screen coordinates when clicking UIA `clickable_point` or screenshot-derived positions.
+6. Use `Input Mouse` **Mode 2** (with Handle) only for client-area coordinates, such as points from a `Window Inspect` client-area screenshot. Do not convert UIA screen coordinates by subtracting the UIA root bounds.
+7. Use `Window Operation Action=Activate` before text input or when the target window needs focus.
 8. Before using `Input Text`, focus the intended control when possible; if focus cannot be confirmed, try input cautiously and verify the result.
 9. Repeat snapshot, inspect, and action until the task is complete.
 10. When GUI automation is inefficient or unnecessary, use PowerShell, .NET, or platform APIs directly. Store generated files only in writable locations.
@@ -256,5 +317,5 @@ Notes:
 
 - `Window Snapshot` captures the full virtual desktop; `Window Inspect` targets one top-level window.
 - `SendInput` acts on the current foreground context; use `Window Operation` or `Input Mouse Handle=...` when focus matters.
-- UIA `clickable_point` and element bounds are already screen coordinates.
+- UIA `clickable_point` and element bounds are already screen coordinates — use them with **Mode 1 (no Handle)**.
 - UIA traversal is capped, so very large trees may be partial.

@@ -79,10 +79,10 @@ Command(VOID)
         return BuildErrorOutput(E_INVALIDARG, "Parameter \"Program\" is required.");
     }
 
-    CommandLine = BuildCommandLineWithProgram(Program, Arguments);
-    if (CommandLine == NULL)
+    Status = BuildCommandLineWithProgram(Program, Arguments, &CommandLine);
+    if (!NT_SUCCESS(Status))
     {
-        return BuildErrorOutput(E_OUTOFMEMORY, "Failed to allocate command line.");
+        return BuildErrorOutput(HRESULT_FROM_NT(Status), "Failed to build command line.");
     }
     if (_wcsicmp(Level, L"AuthenticatedUsers") == 0)
     {
@@ -92,14 +92,14 @@ Command(VOID)
         DisableAuthUsers = TRUE;
     } else
     {
-        Mem_Free(CommandLine);
+        PS_FreeCommandLineBuffer(CommandLine);
         return BuildErrorOutput(E_INVALIDARG, "Parameter \"Level\" should be \"AuthenticatedUsers\" or \"Users\".");
     }
 
     Status = CreateFilteredToken(DisableAuthUsers, &Token);
     if (!NT_SUCCESS(Status))
     {
-        Mem_Free(CommandLine);
+        PS_FreeCommandLineBuffer(CommandLine);
         return BuildErrorOutput(HRESULT_FROM_NT(Status), "CreateFilteredToken failed.");
     }
 
@@ -126,7 +126,7 @@ Command(VOID)
         j = BuildErrorOutput(HRESULT_FROM_WIN32(Err_GetLastError()), "CreateProcessAsUserW failed.");
     }
     CloseHandle(Token);
-    Mem_Free(CommandLine);
+    PS_FreeCommandLineBuffer(CommandLine);
 
     return j;
 }
