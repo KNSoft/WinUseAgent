@@ -10,7 +10,7 @@ static WUA_COMMAND_PARAMETER Parameters[] = {
     DEF_PARAMETER_ENTRY(Arguments, Arguments, FALSE)
 };
 
-WUA_COMMAND_FN Command;
+static WUA_COMMAND_FN Command;
 WUA_COMMAND Run_Restrict = { Parameters, ARRAYSIZE(Parameters), &Command };
 
 static CONST SID AuthUsersSid = SID_AUTHENTICATED_USERS;

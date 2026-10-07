@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+  <metadata>
+    <id>KNSoft.MakeLifeEasier</id>
+    <version>1.0.12-beta.local.4</version>
+    <authors>KNSoft</authors>
+    <description>MLE public commit 93f8aac with the PS_CreateProcess CreationFlags update.</description>
+    <license type="expression">MIT</license>
+    <readme>README.md</readme>
+    <repository type="git" url="https://github.com/KNSoft/KNSoft.MakeLifeEasier" commit="93f8aac25264421956a131fbb22eb5686f38847f" />
+    <dependencies>
+      <dependency id="KNSoft.NDK" version="[1.2.75-beta]" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="$MleRoot$\README.md" target="README.md" />
+    <file src="$MleRoot$\LICENSE" target="LICENSE" />
+    <file src="$Patch$" target="Source\" />
+    <file src="$MleRoot$\Source\KNSoft.MakeLifeEasier.targets" target="build\" />
+    <file src="$MleRoot$\Source\KNSoft.MakeLifeEasier\**\*.h" exclude="$MleRoot$\Source\KNSoft.MakeLifeEasier\**\*.g.h;$MleRoot$\Source\KNSoft.MakeLifeEasier\Resource.h;$MleRoot$\Source\KNSoft.MakeLifeEasier\Resource.Embedded.h" target="build\Include\KNSoft\MakeLifeEasier\" />
+    <file src="$MleRoot$\Source\OutDir\x64\Debug\KNSoft.MakeLifeEasier.lib" target="build\Lib\x64\Debug\" />
+    <file src="$MleRoot$\Source\OutDir\x64\Debug\KNSoft.MakeLifeEasier.pdb" target="build\Lib\x64\Debug\" />
+    <file src="$MleRoot$\Source\OutDir\x64\Release\KNSoft.MakeLifeEasier.lib" target="build\Lib\x64\Release\" />
+    <file src="$MleRoot$\Source\OutDir\x64\Release\KNSoft.MakeLifeEasier.pdb" target="build\Lib\x64\Release\" />
+    <file src="$MleRoot$\Source\OutDir\x86\Debug\KNSoft.MakeLifeEasier.lib" target="build\Lib\Win32\Debug\" />
+    <file src="$MleRoot$\Source\OutDir\x86\Debug\KNSoft.MakeLifeEasier.pdb" target="build\Lib\Win32\Debug\" />
+    <file src="$MleRoot$\Source\OutDir\x86\Release\KNSoft.MakeLifeEasier.lib" target="build\Lib\Win32\Release\" />
+    <file src="$MleRoot$\Source\OutDir\x86\Release\KNSoft.MakeLifeEasier.pdb" target="build\Lib\Win32\Release\" />
+  </files>
+</package>

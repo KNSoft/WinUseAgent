@@ -57,6 +57,14 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(IntDir)Rpc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Manifest>
+      <AdditionalManifestFiles>$(ProjectDir)WUA-CLI.manifest;%(AdditionalManifestFiles)</AdditionalManifestFiles>
+    </Manifest>
+  </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
@@ -79,10 +87,6 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <Manifest />
-    <Manifest>
-      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -96,10 +100,6 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <Manifest />
-    <Manifest>
-      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -111,10 +111,6 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <Manifest />
-    <Manifest>
-      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -128,56 +124,134 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <Manifest />
-    <Manifest>
-      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Tools\CUA\Command.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Main.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Session.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Keys.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Utils\Capture.cpp" />
+    <ClCompile Include="Tools\CUA\ChildSession.cpp" />
+    <ClCompile Include="Tools\CUA\Worker.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Uia.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Server.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Transport.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Cli.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="$(IntDir)Rpc\RpcClient.g.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ObjectFileName>$(IntDir)Rpc\RpcClient.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="$(IntDir)Rpc\RpcServer.g.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ObjectFileName>$(IntDir)Rpc\RpcServer.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="Tests\TestRpc.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tests\TestHost.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Tools\File\Recycle.cpp" />
-    <ClCompile Include="Tools\Input\Mouse.cpp" />
-    <ClCompile Include="Tools\Input\Text.cpp" />
-    <ClCompile Include="Tools\Run\Elevate.cpp" />
-    <ClCompile Include="Tools\Run\Locate.cpp" />
-    <ClCompile Include="Tools\Run\Restrict.cpp" />
-    <ClCompile Include="Tools\Text\Inspect.cpp" />
-    <ClCompile Include="Tools\Window\Inspect.cpp" />
-    <ClCompile Include="Tools\Window\Operation.cpp" />
-    <ClCompile Include="Tools\Window\Snapshot.cpp" />
-    <ClCompile Include="Utils\Gdip.cpp" />
-    <ClCompile Include="Utils\Json.cpp" />
-    <ClCompile Include="Utils\Process.cpp" />
-    <ClCompile Include="Utils\UIA.cpp" />
-    <ClCompile Include="Utils\Window.cpp" />
+    <ClCompile Include="Tools\File\Recycle.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Input.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Text.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\Run\Elevate.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\Run\Locate.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\Run\Restrict.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\Text\Inspect.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Inspect.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Window.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Utils\Output.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Utils\Process.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Tools\CUA\Command.h" />
+    <ClInclude Include="Utils\Capture.h" />
+    <ClInclude Include="Tools\CUA\ChildSession.h" />
+    <ClInclude Include="Tools\CUA\Worker.h" />
+    <ClInclude Include="Tools\CUA\Uia.h" />
+    <ClInclude Include="Tools\CUA\Server.h" />
+    <ClInclude Include="Tools\CUA\Cli.h" />
+    <ClInclude Include="Tools\CUA\Transport.h" />
+    <ClInclude Include="Tests\TestHost.h" />
+    <ClInclude Include="Tests\TestRpc.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Utils\Utils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Tools\CUA\RpcClient.acf" />
+    <Manifest Include="WUA-CLI.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Tools\CUA\Rpc.idl">
+      <Command>if not exist &quot;$(IntDir)Rpc&quot; mkdir &quot;$(IntDir)Rpc&quot;
+&quot;$(WindowsSdkDir)bin\$(WindowsTargetPlatformVersion)\x64\midl.exe&quot; /nologo /env $(Platform.ToLowerInvariant()) /client stub /server none /acf &quot;$(ProjectDir)Tools\CUA\RpcClient.acf&quot; /prefix client CuaClient_ /h RpcClient.g.h /cstub RpcClient.g.c /out &quot;$(IntDir)Rpc&quot; &quot;%(FullPath)&quot;
+if errorlevel 1 exit /b %errorlevel%
+&quot;$(WindowsSdkDir)bin\$(WindowsTargetPlatformVersion)\x64\midl.exe&quot; /nologo /env $(Platform.ToLowerInvariant()) /client none /server stub /prefix server CuaServer_ /h RpcServer.g.h /sstub RpcServer.g.c /out &quot;$(IntDir)Rpc&quot; &quot;%(FullPath)&quot;</Command>
+      <AdditionalInputs>$(ProjectDir)Tools\CUA\RpcClient.acf;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs>$(IntDir)Rpc\RpcClient.g.c;$(IntDir)Rpc\RpcClient.g.h;$(IntDir)Rpc\RpcServer.g.c;$(IntDir)Rpc\RpcServer.g.h</Outputs>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WUA-CLI.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\packages\KNSoft.MakeLifeEasier.1.0.12-beta\build\KNSoft.MakeLifeEasier.targets" Condition="Exists('..\packages\KNSoft.MakeLifeEasier.1.0.12-beta\build\KNSoft.MakeLifeEasier.targets')" />
+    <Import Project="..\packages\KNSoft.MakeLifeEasier.1.0.12-beta.local.4\build\KNSoft.MakeLifeEasier.targets" Condition="Exists('..\packages\KNSoft.MakeLifeEasier.1.0.12-beta.local.4\build\KNSoft.MakeLifeEasier.targets')" />
     <Import Project="..\packages\KNSoft.NDK.1.2.75-beta\build\KNSoft.NDK.targets" Condition="Exists('..\packages\KNSoft.NDK.1.2.75-beta\build\KNSoft.NDK.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\KNSoft.MakeLifeEasier.1.0.12-beta\build\KNSoft.MakeLifeEasier.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\KNSoft.MakeLifeEasier.1.0.12-beta\build\KNSoft.MakeLifeEasier.targets'))" />
+    <Error Condition="!Exists('..\packages\KNSoft.MakeLifeEasier.1.0.12-beta.local.4\build\KNSoft.MakeLifeEasier.targets')" Text="Run Source\Build\Build-MLE.ps1 to build and restore the MLE preview dependency." />
     <Error Condition="!Exists('..\packages\KNSoft.NDK.1.2.75-beta\build\KNSoft.NDK.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\KNSoft.NDK.1.2.75-beta\build\KNSoft.NDK.targets'))" />
   </Target>
 </Project>

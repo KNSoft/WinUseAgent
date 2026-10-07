@@ -1,0 +1,19 @@
+[
+    uuid(2b65d37a-7cb3-43bc-b22e-64218c8f7b46),
+    version(1.0),
+    pointer_default(unique)
+]
+interface CuaRpc
+{
+    const unsigned long CUA_RPC_MAX_REQUEST_BYTES = 1048576;
+    const unsigned long CUA_RPC_MAX_REPLY_BYTES = 4194304;
+
+    typedef [range(0, CUA_RPC_MAX_REPLY_BYTES)] unsigned long ReplySize;
+    long Execute(
+        [in] handle_t Binding,
+        [in] unsigned long SessionId,
+        [in, range(1, CUA_RPC_MAX_REQUEST_BYTES)] unsigned long RequestLength,
+        [in, size_is(RequestLength)] byte* Request,
+        [out] ReplySize* ReplyLength,
+        [out, size_is(, *ReplyLength)] byte** Reply);
+}

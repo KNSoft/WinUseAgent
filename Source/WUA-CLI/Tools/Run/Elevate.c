@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 static PWSTR Program;
 static PWSTR Arguments;
@@ -8,7 +8,7 @@ static WUA_COMMAND_PARAMETER Parameters[] = {
     DEF_PARAMETER_ENTRY(Arguments, Arguments, FALSE)
 };
 
-WUA_COMMAND_FN Command;
+static WUA_COMMAND_FN Command;
 WUA_COMMAND Run_Elevate = { Parameters, ARRAYSIZE(Parameters), &Command };
 
 static

@@ -1,0 +1,4 @@
+interface CuaRpc
+{
+    [async] Execute();
+}

@@ -6,7 +6,7 @@ static WUA_COMMAND_PARAMETER Parameters[] = {
     DEF_PARAMETER_ENTRY(File, String, TRUE)
 };
 
-WUA_COMMAND_FN Command;
+static WUA_COMMAND_FN Command;
 WUA_COMMAND File_Recycle = { Parameters, ARRAYSIZE(Parameters), &Command };
 
 static
@@ -26,7 +26,7 @@ Command(VOID)
     }
 
     cchFile = wcslen(File);
-    MultiSzFile = reinterpret_cast<PWSTR>(Mem_Alloc((cchFile + 2) * sizeof(WCHAR)));
+    MultiSzFile = (PWSTR)(Mem_Alloc((cchFile + 2) * sizeof(WCHAR)));
     if (MultiSzFile == NULL)
     {
         return BuildErrorOutput(E_OUTOFMEMORY, "Failed to allocate file path buffer.");

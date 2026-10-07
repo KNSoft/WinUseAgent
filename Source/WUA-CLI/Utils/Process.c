@@ -23,10 +23,10 @@ QueryProductName(
     {
         return FALSE;
     }
-    return VerQueryValueW(VersionInfo, szSubBlock, reinterpret_cast<PVOID*>(&pszProductName), &u) &&
+    return VerQueryValueW(VersionInfo, szSubBlock, (PVOID*)(&pszProductName), &u) &&
         pszProductName != NULL &&
         u != 0 &&
-        wcscpy_s(Buffer, BufferCch, pszProductName) == 0;
+        Str_CopyExW(Buffer, BufferCch, pszProductName) != 0;
 }
 
 _Success_(return != FALSE)
@@ -36,7 +36,7 @@ Util_Proc_GetProductName(
     _Out_writes_(BufferCch) PWSTR Buffer,
     _In_ ULONG BufferCch)
 {
-    DWORD dw;
+    DWORD dw, Ignored;
     UINT u;
     PVOID pInfo;
     struct
@@ -51,10 +51,7 @@ Util_Proc_GetProductName(
     {
         return FALSE;
     }
-    /* lpdwHandle can be NULL, wrong SAL annotation in Windows SDK */
-#pragma warning(disable: __WARNING_INVALID_PARAM_VALUE_1)
-    dw = GetFileVersionInfoSizeExW(FILE_VER_GET_LOCALISED, File, NULL);
-#pragma warning(default: __WARNING_INVALID_PARAM_VALUE_1)
+    dw = GetFileVersionInfoSizeExW(FILE_VER_GET_LOCALISED, File, &Ignored);
     if (dw == 0)
     {
         return FALSE;
@@ -69,7 +66,7 @@ Util_Proc_GetProductName(
         Mem_Free(pInfo);
         return FALSE;
     }
-    if (!VerQueryValueW(pInfo, L"\\VarFileInfo\\Translation", reinterpret_cast<PVOID*>(&pTranslation), &u))
+    if (!VerQueryValueW(pInfo, L"\\VarFileInfo\\Translation", (PVOID*)(&pTranslation), &u))
     {
         Mem_Free(pInfo);
         return FALSE;

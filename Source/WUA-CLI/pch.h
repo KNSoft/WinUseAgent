@@ -5,12 +5,11 @@
 #define MLE_API
 #include <KNSoft/MakeLifeEasier/MakeLifeEasier.h>
 
-#include <gdiplus.h>
-#include <uiautomation.h>
-#pragma comment(lib, "gdiplus.lib")
+typedef struct IUIAutomationElement IUIAutomationElement;
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "oleaut32.lib")
 #pragma comment(lib, "uiautomationcore.lib")
+#pragma comment(lib, "KNSoft.NDK.Win32u.lib")
 #pragma comment(lib, "Version.lib")
 
 #include <roapi.h>
@@ -52,7 +51,8 @@ typedef struct _WUA_COMMAND_PARAMETER
     };
 } WUA_COMMAND_PARAMETER, *PWUA_COMMAND_PARAMETER;
 
-#define DEF_PARAMETER_ENTRY(Name, Type, Required) { L#Name, reinterpret_cast<PVOID*>(&Name), { sizeof(Name), WUA_Parameter_##Type, Required} }
+#define DEF_PARAMETER_ENTRY(Name, Type, Required) { L""#Name, (PVOID*)&Name, { sizeof(Name), WUA_Parameter_##Type, \
+    Required} }
 
 typedef struct _WUA_COMMAND
 {
@@ -60,6 +60,16 @@ typedef struct _WUA_COMMAND
     ULONG ParameterCount;
     WUA_COMMAND_FN* Func;
 } WUA_COMMAND, *PWUA_COMMAND;
+
+EXTERN_C_START
+
+_Success_(return == NULL)
+_Ret_maybenull_
+PCWSTR
+InitCommandParameters(
+    _Inout_ PWUA_COMMAND Command,
+    _In_ int Argc,
+    _In_reads_(Argc) _Pre_z_ wchar_t** Argv);
 
 _Ret_maybenull_
 IJsonObject*
@@ -79,3 +89,5 @@ BuildCommandLineWithProgram(
     _In_ PCWSTR Program,
     _In_opt_ PCWSTR Arguments,
     _Outptr_result_z_ PWSTR* CommandLine);
+
+EXTERN_C_END

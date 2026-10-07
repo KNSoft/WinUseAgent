@@ -1,56 +1,110 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Tools\Window\Snapshot.cpp">
-      <Filter>Tools\Window</Filter>
+    <ClCompile Include="Main.c" />
+    <ClCompile Include="Tools\CUA\Command.c">
+      <Filter>Tools\CUA</Filter>
     </ClCompile>
-    <ClCompile Include="Utils\Gdip.cpp">
+    <ClCompile Include="Tools\CUA\Session.c">
+      <Filter>Tools\CUA</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Keys.c">
+      <Filter>Tools\CUA</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\Capture.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Tools\File\Recycle.cpp">
+    <ClCompile Include="Tools\CUA\ChildSession.cpp">
+      <Filter>Tools\CUA</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Worker.c">
+      <Filter>Tools\CUA</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Uia.c">
+      <Filter>Tools\CUA</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Server.c">
+      <Filter>Tools\CUA</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Transport.c">
+      <Filter>Tools\CUA</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\CUA\Cli.c">
+      <Filter>Tools\CUA</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\TestRpc.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\TestHost.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Tools\File\Recycle.c">
       <Filter>Tools\File</Filter>
     </ClCompile>
-    <ClCompile Include="Tools\Input\Text.cpp">
-      <Filter>Tools\Input</Filter>
+    <ClCompile Include="Tools\CUA\Text.c">
+      <Filter>Tools\CUA</Filter>
     </ClCompile>
-    <ClCompile Include="Utils\Window.cpp">
-      <Filter>Utils</Filter>
+    <ClCompile Include="Tools\CUA\Input.c">
+      <Filter>Tools\CUA</Filter>
     </ClCompile>
-    <ClCompile Include="Tools\Input\Mouse.cpp">
-      <Filter>Tools\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="Tools\Run\Elevate.cpp">
+    <ClCompile Include="Tools\Run\Elevate.c">
       <Filter>Tools\Run</Filter>
     </ClCompile>
-    <ClCompile Include="Tools\Run\Locate.cpp">
+    <ClCompile Include="Tools\Run\Locate.c">
       <Filter>Tools\Run</Filter>
     </ClCompile>
-    <ClCompile Include="Tools\Run\Restrict.cpp">
+    <ClCompile Include="Tools\Run\Restrict.c">
       <Filter>Tools\Run</Filter>
     </ClCompile>
-    <ClCompile Include="Tools\Text\Inspect.cpp">
+    <ClCompile Include="Tools\Text\Inspect.c">
       <Filter>Tools\Text</Filter>
     </ClCompile>
-    <ClCompile Include="Utils\Json.cpp">
+    <ClCompile Include="Utils\Output.c">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Utils\UIA.cpp">
-      <Filter>Utils</Filter>
+    <ClCompile Include="Tools\CUA\Inspect.c">
+      <Filter>Tools\CUA</Filter>
     </ClCompile>
-    <ClCompile Include="Tools\Window\Inspect.cpp">
-      <Filter>Tools\Window</Filter>
+    <ClCompile Include="Tools\CUA\Window.c">
+      <Filter>Tools\CUA</Filter>
     </ClCompile>
-    <ClCompile Include="Tools\Window\Operation.cpp">
-      <Filter>Tools\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\Process.cpp">
+    <ClCompile Include="Utils\Process.c">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Tools\CUA\Command.h">
+      <Filter>Tools\CUA</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\Capture.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Tools\CUA\ChildSession.h">
+      <Filter>Tools\CUA</Filter>
+    </ClInclude>
+    <ClInclude Include="Tools\CUA\Worker.h">
+      <Filter>Tools\CUA</Filter>
+    </ClInclude>
+    <ClInclude Include="Tools\CUA\Uia.h">
+      <Filter>Tools\CUA</Filter>
+    </ClInclude>
+    <ClInclude Include="Tools\CUA\Cli.h">
+      <Filter>Tools\CUA</Filter>
+    </ClInclude>
+    <ClInclude Include="Tools\CUA\Server.h">
+      <Filter>Tools\CUA</Filter>
+    </ClInclude>
+    <ClInclude Include="Tools\CUA\Transport.h">
+      <Filter>Tools\CUA</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\TestRpc.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\TestHost.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
     <ClInclude Include="Utils\Utils.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -58,22 +112,23 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <Manifest Include="WUA-CLI.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <Filter Include="Tests">
+      <UniqueIdentifier>{B2DA7267-19E3-4C41-8BF0-10E34778FF03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tools\CUA">
+      <UniqueIdentifier>{A6DAFF64-4F1D-44D1-921E-9F54C10588A0}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Tools">
       <UniqueIdentifier>{a557ed21-0d10-48de-a8f3-b58701fd6e2b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tools\Window">
-      <UniqueIdentifier>{d0bf220c-e71e-4bd6-9765-92bd74c8c065}</UniqueIdentifier>
     </Filter>
     <Filter Include="Utils">
       <UniqueIdentifier>{135f89ce-8898-46be-9842-a9a0d3b39580}</UniqueIdentifier>
     </Filter>
     <Filter Include="Tools\File">
       <UniqueIdentifier>{79a98669-ccbd-4a4b-8a0e-e0e3203c6c1b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Tools\Input">
-      <UniqueIdentifier>{3cac2e7d-09a1-428c-8483-42fd02a9fb7a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Tools\Text">
       <UniqueIdentifier>{05829a1d-2704-41d6-aae6-9088e191380d}</UniqueIdentifier>
@@ -84,5 +139,13 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WUA-CLI.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Tools\CUA\Rpc.idl">
+      <Filter>Tools\CUA</Filter>
+    </CustomBuild>
+    <None Include="Tools\CUA\RpcClient.acf">
+      <Filter>Tools\CUA</Filter>
+    </None>
   </ItemGroup>
 </Project>
